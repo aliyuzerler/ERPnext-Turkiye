@@ -1,0 +1,72 @@
+# ERPNext Türkiye — Uygulama Yol Haritası (v2.0)
+
+Referans metodoloji: Viva Yazılım'ın kamuya açık hizmet yaklaşımı —
+**Denetim → UAT → Kontrollü Canlı Geçiş** ve **dört katmanlı e-Fatura
+mimarisi** (Kaynak Veri → Dönüşüm/UBL-TR → İletim → İzleme). Ayrıntılı
+karar tabloları proje dokümanında (yol haritası dokümanı v2.0) yer alır.
+
+## Faz çıkış kuralı (değişmez)
+
+> Her faz, `make phase-gate` ve CI kapıları **yeşil olmadan kapanmaz**:
+> lint (ruff, eslint, prettier) + tip kontrolü (mypy, tsc) + birim testler
+> (pytest) + uçtan uca testler (Playwright). Bir kapı kırmızıysa takip eden
+> faz başlatılmaz.
+
+## Faz 0 — Keşif ve Denetim ✅ (tamamlandı)
+
+- İş akışı envanteri, boşluk analizi ve UAT senaryo taslağı hazırlanır (Faz 5'e girdi).
+- Depo iskeleti: Frappe uygulaması `erpnext_turkiye`, SAF çekirdek modüller.
+- Kalite kapıları: ruff + mypy + pytest + eslint + prettier + tsc + Playwright; Makefile ve CI.
+- Çekirdek modüller: TCKN/VKN doğrulama (GİB algoritmaları), KDV oranları ve
+  tevkifat hesabı, TCMB kur XML ayrıştırıcı, THP başlangıç seti, e-belge durum
+  panosu bileşeni (TS) + e2e.
+
+## Faz 1 — Kurulum ve Temel Yapılandırma (2 hafta, H2-H3)
+
+- ERPNext + Turkish Delight kurulumu, yerel bilgisayarda bench ortamı.
+- Türkçe arayüzün devreye alınması; şirket kaydı ve temel yapılandırma.
+- Çıkış kriteri (KM-1): temel akışlar Türkçe arayüzde gezilebiliyor.
+- Viva ilkesi: kurulum rol bazlı eğitim planının başlangıç noktasıdır.
+
+## Faz 2 — Türkiye Lokalizasyon Paketi (4 hafta, H4-H7)
+
+- Hesap planı (THP tam set) ve KDV setleri (%1/%10/%20 + tevkifat kesirleri).
+- TCKN/VKN doğrulamasının tüm ana veri DocType'larına bağlanması
+  (Faz 0'daki `kimlik.py` çekirdeği genişletilir).
+- TCMB kur servisinin günlük zamanlayıcıyla devreye alınması
+  (`hooks.py` scheduler_events aktivasyonu).
+- İl/ilçe veri yapısı; ana veri doğrulama kuralları (Kaynak Veri katmanı).
+- Çıkış kriteri (KM-2): örnek fatura verisi doğrulama kurallarından geçiyor.
+
+## Faz 3 — e-Dönüşüm Entegrasyonu (5 hafta, H8-H12)
+
+Dört katmanlı mimari sırayla:
+
+1. **Dönüşüm:** UBL-TR eşleme modülü (Turkish Delight e-Fatura çekirdeği genişletilir).
+2. **İletim:** entegratör bağımsız adaptör + yeniden deneme kuyruğu.
+3. **Belge türleri:** e-Fatura → e-Arşiv → e-İrsaliye → e-Defter.
+4. **İzleme:** e-belge durum panosu canlı veriye bağlanır (Faz 0 bileşeni).
+
+- Viva'nın beş adımlı yayına çıkış listesi çıkış kriterlerine eklenir.
+- Çıkış kriteri (KM-3): test faturaları entegratör test ortamında şema doğrulamasından geçiyor.
+
+## Faz 4 — İK-Bordro ve Kalan Modüller (3 hafta, H13-H15)
+
+- SGK ve izin türü uyarlamaları; yerel bordro rapor beklentileri.
+- Üretim iyileştirmeleri (Turkish Delight fonksiyonları), CRM ve Projeler.
+- Kullanıcı rolü listesi ve yetkilendirme.
+
+## Faz 5 — UAT, Eğitim ve Canlı Geçiş (3 hafta, H16-H18)
+
+- Faz 0'da taslağı hazırlanan senaryolar gerçekçi verilerle koşulur (UAT 2-3 hafta).
+- Rol bazlı eğitim + dokümantasyon paketi.
+- Kontrollü canlı geçiş: ilk döngüde yakın izleme, günlük yayınlama pencereleri.
+- Çıkış kriteri (KM-4): UAT onayı + ilk döngü izlemesi tamam.
+
+## Sürekli işler (tüm fazlar)
+
+- **Uyumluluk izleme:** mevzuat değişiklikleri takip takvimi; yayına çıkmadan
+  önce güncel eşikler GİB resmi kanallarından doğrulanır.
+- **Yedekleme ve izleme:** günlük yedekleme + harici kopya, kesintisiz güç
+  kaynağı, durum panosu uyarıları (yerel kurulumun SLA eşdeğeri).
+- **Çeviri bakımı:** sürüm güncellemelerinde Türkçe çeviri ve uyumluluk birlikte yönetilir.

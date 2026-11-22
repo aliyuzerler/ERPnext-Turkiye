@@ -1,0 +1,25 @@
+# Node
+node_modules/
+playwright-report/
+test-results/
+
+# Derleme çıktısı (tsc) — CI ve make phase-gate her koşumda yeniden derler
+erpnext_turkiye/public/js/
+
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+*.egg-info/
+
+# Yerel ortam
+sites/
+.env
+*.pem
+*.key
+
+# OS
+.DS_Store
+Thumbs.db

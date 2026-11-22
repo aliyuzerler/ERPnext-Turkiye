@@ -1,0 +1,17 @@
+{
+  "compilerOptions": {
+    "target": "ES2019",
+    "module": "none",
+    "lib": ["DOM", "ES2019"],
+    "strict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noFallthroughCasesInSwitch": true,
+    "forceConsistentCasingInFileNames": true,
+    "noEmitOnError": true,
+    "rootDir": "frontend/src",
+    "outDir": "erpnext_turkiye/public/js",
+    "skipLibCheck": true
+  },
+  "include": ["frontend/src/**/*.ts"]
+}

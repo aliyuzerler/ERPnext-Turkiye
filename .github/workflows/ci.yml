@@ -1,0 +1,62 @@
+name: CI
+
+# Faz çıkış kuralı: her faz bu CI kapılarından geçmeden kapanmaz.
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  python-kalite:
+    name: Python (ruff + mypy + pytest)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Araçları kur
+        run: pip install ruff mypy pytest
+      - name: Lint (ruff)
+        run: ruff check .
+      - name: Tip kontrolü (mypy)
+        run: mypy erpnext_turkiye tests
+      - name: Birim testler (pytest)
+        run: pytest
+
+  js-kalite:
+    name: JS/TS (eslint + prettier + tsc)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Bağımlılıklar
+        run: npm ci
+      - name: Lint (eslint)
+        run: npm run lint
+      - name: Biçim denetimi (prettier)
+        run: npm run format:check
+      - name: Tip kontrolü (tsc)
+        run: npm run typecheck
+      - name: Derleme (tsc build)
+        run: npm run build
+
+  e2e:
+    name: e2e (Playwright)
+    runs-on: ubuntu-latest
+    needs: js-kalite
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Bağımlılıklar
+        run: npm ci
+      - name: Derle
+        run: npm run build
+      - name: Chromium kur
+        run: npx playwright install --with-deps chromium
+      - name: e2e testler
+        run: npm run e2e

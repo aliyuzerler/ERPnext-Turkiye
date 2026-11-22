@@ -1,0 +1,23 @@
+{
+  "name": "erpnext-turkiye",
+  "version": "0.1.0",
+  "private": true,
+  "description": "ERPNext Türkiye lokalizasyon uygulaması — kalite kapıları ve e-belge pano bileşeni",
+  "scripts": {
+    "lint": "eslint .",
+    "format:check": "prettier --check .",
+    "format": "prettier --write .",
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit && tsc -p tsconfig.e2e.json",
+    "e2e": "playwright test"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.20.0",
+    "@playwright/test": "^1.50.0",
+    "@types/node": "^24.0.0",
+    "eslint": "^9.20.0",
+    "prettier": "^3.5.0",
+    "typescript": "^5.7.0",
+    "typescript-eslint": "^8.25.0"
+  }
+}

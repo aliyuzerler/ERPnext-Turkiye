@@ -1,0 +1,45 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "erpnext_turkiye"
+version = "0.1.0"
+description = "Türkiye lokalizasyonu: e-belge, TCMB kur servisi, Tek Düzen Hesap Planı, TCKN/VKN doğrulama"
+requires-python = ">=3.10"
+license = { file = "LICENSE" }
+authors = [{ name = "aliyuzerler" }]
+# frappe / erpnext, bench çalışma zamanı tarafından sağlanır;
+# çekirdek modüllerin (erpnext_turkiye.turkiye.*) hiçbir üçüncü taraf bağımlılığı yoktur.
+dependencies = []
+
+[project.optional-dependencies]
+dev = ["ruff>=0.8", "mypy>=1.14", "pytest>=8.3"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "W", "F", "I", "UP", "B", "SIM", "RUF"]
+# Türkçe docstring'ler: ı/ş/ğ gibi harfler "ambiguous unicode" sayılır (RUF001-003).
+ignore = ["RUF001", "RUF002", "RUF003"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["erpnext_turkiye"]
+
+[tool.mypy]
+python_version = "3.10"
+warn_unused_ignores = true
+warn_return_any = true
+disallow_untyped_defs = true
+no_implicit_optional = true
+strict_equality = true
+
+[[tool.mypy.overrides]]
+module = ["frappe", "frappe.*"]
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"

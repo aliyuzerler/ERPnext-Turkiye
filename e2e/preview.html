@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="tr">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>e-Belge Durum Panosu — Önizleme</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        margin: 2rem;
+        background: #f5f6f8;
+      }
+      .ebelge-panel {
+        max-width: 720px;
+        margin: 0 auto;
+        background: #fff;
+        padding: 1.5rem;
+        border-radius: 8px;
+      }
+      .ebelge-kartlar {
+        display: flex;
+        gap: 1rem;
+        margin: 1rem 0;
+      }
+      .ebelge-kart {
+        flex: 1;
+        padding: 0.75rem 1rem;
+        border-radius: 6px;
+        background: #eef1f4;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+      }
+      .ebelge-kart[data-durum="hatali"] {
+        background: #fbeae5;
+      }
+      .ebelge-kart[data-durum="tamamlanan"] {
+        background: #eaf3ec;
+      }
+      .ebelge-sayi {
+        font-size: 1.6rem;
+        font-weight: bold;
+      }
+      .ebelge-etiket {
+        font-size: 0.85rem;
+        color: #555;
+      }
+      .ebelge-filtre {
+        display: flex;
+        gap: 0.5rem;
+        margin-bottom: 1rem;
+      }
+      .ebelge-tablo {
+        width: 100%;
+        border-collapse: collapse;
+      }
+      .ebelge-tablo th,
+      .ebelge-tablo td {
+        border: 1px solid #dde3e9;
+        padding: 0.4rem 0.6rem;
+        text-align: left;
+      }
+      .ebelge-tablo thead th {
+        background: #d4875a;
+        color: #fff;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="panel"></div>
+    <script src="../erpnext_turkiye/public/js/ebelge_panel.js"></script>
+    <script>
+      window.EBelgePanel.create(document.getElementById("panel"), {
+        belgeler: [
+          { belgeNo: "EFT-0001", tip: "e-Fatura", durum: "bekleyen" },
+          { belgeNo: "EFT-0002", tip: "e-Fatura", durum: "hatali" },
+          { belgeNo: "EFT-0003", tip: "e-Arşiv", durum: "tamamlanan" },
+          { belgeNo: "EFT-0004", tip: "e-İrsaliye", durum: "tamamlanan" },
+        ],
+      });
+    </script>
+  </body>
+</html>

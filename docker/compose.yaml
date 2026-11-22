@@ -1,0 +1,165 @@
+# ERPNext Türkiye — yerel geliştirme ortamı
+# frappe_docker pwd.yml kalibinden uyarlanmıştır; canlıya çıkışta güncel kalıp
+# için https://github.com/frappe/frappe_docker deposuna bakın.
+#
+# Kullanım (depo kökünden):
+#   docker compose -f docker/compose.yaml up -d
+# Site "localhost:8080" adresinde açılır; uygulamayla birlikte kurulur.
+services:
+  db:
+    image: mariadb:10.6
+    restart: unless-stopped
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+      - --skip-character-set-client-handshake
+      - --skip-innodb-read-only-compressed
+    environment:
+      MYSQL_ROOT_PASSWORD: admin
+      MYSQL_USER: admin
+      MYSQL_PASSWORD: admin
+    volumes:
+      - site_db:/var/lib/mysql
+
+  redis-cache:
+    image: redis:6.2-alpine
+    restart: unless-stopped
+
+  redis-queue:
+    image: redis:6.2-alpine
+    restart: unless-stopped
+    volumes:
+      - redis_queue:/data
+
+  backend:
+    image: frappe/erpnext:v15
+    restart: unless-stopped
+    depends_on:
+      - db
+      - redis-cache
+      - redis-queue
+    environment:
+      DB_HOST: db
+      DB_PORT: "3306"
+      REDIS_URL: redis://redis-cache:6379
+      QUEUE_URL: redis://redis-queue:6379
+      SOCKETIO_URL: redis://redis-queue:6379
+    volumes:
+      - sites:/home/frappe/frappe-bench/sites
+      - logs:/home/frappe/frappe-bench/logs
+      # Uygulama kaynağını bench'e bağla (geliştirme modu):
+      - ..:/home/frappe/frappe-bench/apps/erpnext_turkiye
+
+  frontend:
+    image: frappe/erpnext:v15
+    restart: unless-stopped
+    depends_on:
+      - backend
+    command: nginx-entrypoint.sh
+    environment:
+      BACKEND: backend:8000
+      FRAPPE_SITE_NAME_HEADER: localhost
+      SOCKETIO: websocket:9000
+      UPSTREAM_REAL_IP_ADDRESS: 127.0.0.1
+      UPSTREAM_REAL_IP_HEADER: X-Forwarded-For
+      UPSTREAM_REAL_IP_RECURSIVE: "off"
+    ports:
+      - "8080:8080"
+    volumes:
+      - sites:/home/frappe/frappe-bench/sites
+      - logs:/home/frappe/frappe-bench/logs
+
+  websocket:
+    image: frappe/erpnext:v15
+    restart: unless-stopped
+    depends_on:
+      - backend
+    command: node socketio.js
+    environment:
+      REDIS_URL: redis://redis-queue:6379
+    volumes:
+      - sites:/home/frappe/frappe-bench/sites
+
+  queue-default:
+    image: frappe/erpnext:v15
+    restart: unless-stopped
+    depends_on:
+      - configurator
+    command: bench worker --queue short,default,long
+    environment:
+      DB_HOST: db
+      REDIS_URL: redis://redis-cache:6379
+      QUEUE_URL: redis://redis-queue:6379
+    volumes:
+      - sites:/home/frappe/frappe-bench/sites
+      - logs:/home/frappe/frappe-bench/logs
+
+  scheduler:
+    image: frappe/erpnext:v15
+    restart: unless-stopped
+    depends_on:
+      - configurator
+    command: bench schedule
+    environment:
+      DB_HOST: db
+      REDIS_URL: redis://redis-cache:6379
+      QUEUE_URL: redis://redis-queue:6379
+    volumes:
+      - sites:/home/frappe/frappe-bench/sites
+      - logs:/home/frappe/frappe-bench/logs
+
+  configurator:
+    image: frappe/erpnext:v15
+    restart: "no"
+    depends_on:
+      - db
+      - redis-cache
+      - redis-queue
+    entrypoint:
+      - bash
+      - -c
+      - |
+        set -e
+        bench set-config -g db_host $$DB_HOST
+        bench set-config -gp db_port $$DB_PORT
+        bench set-config -g redis_cache $$REDIS_URL
+        bench set-config -g redis_queue $$QUEUE_URL
+        bench set-config -g redis_socketio $$SOCKETIO_URL
+        bench set-config -gp socketio_port $$SOCKETIO_PORT
+    environment:
+      DB_HOST: db
+      DB_PORT: "3306"
+      REDIS_URL: redis://redis-cache:6379
+      QUEUE_URL: redis://redis-queue:6379
+      SOCKETIO_URL: redis://redis-queue:6379
+      SOCKETIO_PORT: "9000"
+    volumes:
+      - sites:/home/frappe/frappe-bench/sites
+
+  create-site:
+    image: frappe/erpnext:v15
+    restart: "no"
+    depends_on:
+      - backend
+    entrypoint:
+      - bash
+      - -c
+      - |
+        set -e
+        sleep 15
+        bench new-site localhost \
+          --no-mariadb-socket \
+          --mariadb-root-password admin \
+          --install-app erpnext \
+          --install-app erpnext_turkiye \
+          --admin-password admin
+        bench use localhost
+    volumes:
+      - sites:/home/frappe/frappe-bench/sites
+      - logs:/home/frappe/frappe-bench/logs
+
+volumes:
+  site_db:
+  redis_queue:
+  sites:
+  logs:

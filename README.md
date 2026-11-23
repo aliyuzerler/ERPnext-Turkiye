@@ -5,16 +5,18 @@ e-İrsaliye, e-Defter), TCMB döviz kuru servisi, Tek Düzen Hesap Planı (THP) 
 TCKN/VKN doğrulama. Yol haritası, Viva Yazılım'ın kamuya açık e-Dönüşüm ve
 ERPNext hizmet yaklaşımı temel alınarak hazırlanmıştır (bkz. ROADMAP.md).
 
-## Proje durumu — Faz 0 tamamlandı
+## Proje durumu — Faz 1 tamamlandı
 
 | Faz   | Kapsam                                                 | Durum         |
 | ----- | ------------------------------------------------------ | ------------- |
 | Faz 0 | Keşif, iskelet, kalite kapıları                        | ✅ Tamamlandı |
-| Faz 1 | Kurulum ve temel yapılandırma                          | Beklemede     |
+| Faz 1 | Kurulum ve temel yapılandırma (Türkçe arayüz)          | ✅ Tamamlandı |
 | Faz 2 | Türkiye lokalizasyon paketi (THP, KDV, TCKN/VKN, TCMB) | Beklemede     |
 | Faz 3 | e-Dönüşüm entegrasyonu (4 katmanlı mimari)             | Beklemede     |
 | Faz 4 | İK-Bordro ve kalan modüller                            | Beklemede     |
 | Faz 5 | UAT, eğitim ve kontrollü canlı geçiş                   | Beklemede     |
+
+Faz 1 çıktıları ve Türkçe arayüz ekran görüntüleri: [docs/FAZ1.md](docs/FAZ1.md)
 
 ## Faz çıkış kuralı
 

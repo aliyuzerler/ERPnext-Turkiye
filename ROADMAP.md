@@ -21,12 +21,17 @@ karar tabloları proje dokümanında (yol haritası dokümanı v2.0) yer alır.
   tevkifat hesabı, TCMB kur XML ayrıştırıcı, THP başlangıç seti, e-belge durum
   panosu bileşeni (TS) + e2e.
 
-## Faz 1 — Kurulum ve Temel Yapılandırma (2 hafta, H2-H3)
+## Faz 1 — Kurulum ve Temel Yapılandırma ✅ (tamamlandı)
 
-- ERPNext + Turkish Delight kurulumu, yerel bilgisayarda bench ortamı.
-- Türkçe arayüzün devreye alınması; şirket kaydı ve temel yapılandırma.
-- Çıkış kriteri (KM-1): temel akışlar Türkçe arayüzde gezilebiliyor.
-- Viva ilkesi: kurulum rol bazlı eğitim planının başlangıç noktasıdır.
+- ERPNext v15 kurulumu (MariaDB 10.6 + Redis, kullanıcı seviyesi yığın) ve
+  `erpnext_turkiye` uygulamasının siteye kurulması.
+- Türkçe arayüzün devreye alınması (dil tr, dd.MM.yyyy, Europe/Istanbul,
+  TRY), şirket kaydı ve demo ana veri (VKN doğrulaması canlı tetiklendi).
+- Kurulum yardımcıları `kurulum.py` (kurulum_tamamlandi_isaretle,
+  sirket_olustur, demo_verisi_olustur vb.) ve ekran görüntüsü betiği.
+- Çıkış kriteri (KM-1) ✅: temel akışlar Türkçe arayüzde gezilebiliyor —
+  kanıt: [docs/FAZ1.md](docs/FAZ1.md), duman testleri 7/7 PASS.
+- Not: Turkish Delight entegrasyonu Faz 2 kurulum paketiyle değerlendirilecek.
 
 ## Faz 2 — Türkiye Lokalizasyon Paketi (4 hafta, H4-H7)
 

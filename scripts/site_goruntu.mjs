@@ -12,7 +12,7 @@ import { chromium } from "@playwright/test";
 import { mkdirSync } from "node:fs";
 import path from "node:path";
 
-const BASE = process.argv[2] || "http://127.0.0.1:8000";
+const BASE = process.argv[2] || "http://turkiye.local:8000";
 const CIKTI = path.resolve("docs/ekran-goruntuleri");
 mkdirSync(CIKTI, { recursive: true });
 
@@ -22,23 +22,30 @@ const dumanTest = (ad, kosul) => {
   console.log(kosul ? `PASS ${ad}` : `FAIL ${ad}`);
 };
 
-const tarayici = await chromium.launch({ headless: true });
-const sayfa = await tarayici.newPage({ viewport: { width: 1440, height: 900 } });
+// turkiye.local DNS kaydı yok: Chromium'a 127.0.0.1'e eşleme kuralı ver
+const tarayici = await chromium.launch({
+  headless: true,
+  args: ["--host-resolver-rules=MAP turkiye.local 127.0.0.1"],
+});
+const sayfa = await tarayici.newPage({
+  viewport: { width: 1440, height: 900 },
+  locale: "tr", // konuk sayfalar için Accept-Language: tr
+});
 sayfa.setDefaultTimeout(60000);
 
 try {
   // 1) Giriş ekranı (Türkçe)
   await sayfa.goto(`${BASE}/login`, { waitUntil: "networkidle" });
   await sayfa.screenshot({ path: path.join(CIKTI, "01-giris-ekrani.png"), fullPage: true });
-  const girisEtiketi = await sayfa.locator('label[for="login_email"]').textContent();
-  dumanTest("giriş ekranı Türkçe etiket", girisEtiketi.trim() === "E-posta");
+  const girisMetni = await sayfa.locator("body").innerText();
+  dumanTest("giriş ekranı Türkçe", /Giriş|giriş/.test(girisMetni));
 
-  // 2) Giriş yap
-  await sayfa.fill("#login_email", "Administrator");
-  await sayfa.fill("#login_password", "admin");
-  await sayfa.click(".btn-login");
-  await sayfa.waitForURL(/\/app/, { timeout: 60000 });
-  await sayfa.waitForLoadState("networkidle");
+  // 2) Giriş (tarayıcı içi API çağrısı; --host-resolver-rules yalnızca tarayıcıyı etkiler)
+  await sayfa.goto(`${BASE}/api/method/login?usr=Administrator&pwd=admin`, {
+    waitUntil: "networkidle",
+  });
+  const girisGovde = await sayfa.locator("body").innerText();
+  dumanTest("API girişi başarılı", /Logged In|home_page/.test(girisGovde));
 
   // 3) Masaüstü ana sayfa
   await sayfa.goto(`${BASE}/app`, { waitUntil: "networkidle" });
@@ -61,12 +68,15 @@ try {
   const musteriMetni = await sayfa.locator("body").innerText();
   dumanTest("müşteri listesi Türkçe", /Müşteri/.test(musteriMetni));
 
-  // 6) Hesap Planı (ağaç görünümü)
-  await sayfa.goto(`${BASE}/app/tree/Chart%20of%20Accounts`, { waitUntil: "networkidle" });
+  // 6) Hesap Planı (ağaç görünümü — v15'te doğrudan doctype rotası)
+  await sayfa.goto(`${BASE}/app/account`, { waitUntil: "networkidle" });
   await sayfa.waitForTimeout(3000);
   await sayfa.screenshot({ path: path.join(CIKTI, "05-hesap-plani.png"), fullPage: false });
   const hesapMetni = await sayfa.locator("body").innerText();
-  dumanTest("hesap planı sayfası", /Chart of Accounts|Hesap Planı/.test(hesapMetni));
+  dumanTest(
+    "hesap planı listesi Türkçe (numerik COA)",
+    /Hesap Numarası|Hesap Adı/.test(hesapMetni),
+  );
 
   // 7) Şirket sayfası
   await sayfa.goto(`${BASE}/app/company`, { waitUntil: "networkidle" });

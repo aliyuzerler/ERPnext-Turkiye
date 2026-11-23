@@ -69,7 +69,7 @@ def gelir_vergisi_aylik(brut: float, kumulatif_matrah: float) -> float:
 
 def damga_vergisi(brut: float) -> float:
     """Damga vergisi: brüt ücret üzerinden binde 7,59 (yarım yukarı)."""
-    return _yuvarla(Decimal(str(brut)) * Decimal(str(DAMGA_ORANI)))
+    return _yuvarla(float(Decimal(str(brut)) * Decimal(str(DAMGA_ORANI))))
 
 
 def bordro_hesapla(brut: float, kumulatif_matrah: float = 0.0) -> dict[str, float]:

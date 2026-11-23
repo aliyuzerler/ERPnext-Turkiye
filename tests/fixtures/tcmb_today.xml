@@ -22,4 +22,14 @@
 			<CrossRateUSD>1.0738</CrossRateUSD>
 			<CrossRateOther/>
 	</Currency>
+	<!-- gerçek bültenlerde çapraz kuru olmayan kayıtlar boş alış/satış gelir -->
+	<Currency CrossOrder="2" Kod="EURTRY" CurrencyCode="EURTRY">
+			<Unit>1</Unit>
+			<Isim>AVRO / TL</Isim>
+			<CurrencyName>EURO / TURKISH LIRA</CurrencyName>
+			<ForexBuying/>
+			<ForexSelling/>
+			<CrossRateUSD/>
+			<CrossRateOther/>
+	</Currency>
 </Tarih_Date>

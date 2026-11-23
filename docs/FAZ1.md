@@ -11,14 +11,19 @@ deponuza gömmek. Çıkış kriteri KM-1: temel akışlar Türkçe arayüzde gez
 
 ## Kurulan yığın (kullanıcı seviyesi — root gerekmez)
 
-| Bileşen         | Sürüm      | Not                                                          |
-| --------------- | ---------- | ------------------------------------------------------------ |
-| MariaDB         | 10.6.18    | resmi binary tarball, kullanıcı dizininde veri klasörü       |
-| Redis           | 8.0.2      | Debian deb'inden çıkarılan binary; cache 13000 / queue 11000 |
-| bench           | 5.31.1     | pip (frappe-bench)                                           |
-| Frappe          | version-15 | bench init                                                   |
-| ERPNext         | version-15 | bench get-app                                                |
-| erpnext_turkiye | 0.1.0      | bizim uygulamamız, siteye install-app edildi                 |
+| Bileşen         | Sürüm    | Not                                                          |
+| --------------- | -------- | ------------------------------------------------------------ |
+| MariaDB         | 10.6.18  | resmi binary tarball, kullanıcı dizininde veri klasörü       |
+| Redis           | 8.0.2    | Debian deb'inden çıkarılan binary; cache 13000 / queue 11000 |
+| bench           | 5.31.1   | pip (frappe-bench)                                           |
+| Frappe          | 15.127.1 | dal `version-15`, commit `0f31ab0` (bench init)              |
+| ERPNext         | 15.126.0 | dal `version-15`, commit `a6f54f9` (bench get-app)           |
+| erpnext_turkiye | 0.1.0    | bizim uygulamamız, siteye install-app edildi                 |
+
+> Sürüm pinleri, Faz 2 raporunun tekrarlanabilirlik bölümüyle tutarlıdır
+> (bkz. [FAZ2.md](FAZ2.md) §9). Kaynak kodlar repoda değil, bench çalışma
+> alanında (`stack/frappe-bench/apps/`) tutulur; repo yalnızca bizim
+> uygulamayı ve sürüm pinlerini taşır.
 
 Sihirbazsız kurulumda karşılaşılan ve **kalıcı çözümü depoya işlenen** üç nokta:
 
@@ -66,11 +71,15 @@ kapılarına dahil değildir; faz çıkış kapısı ayrıca `make phase-gate` i
 
 - Fatura formundaki saat dilimi ipucu ve "Toplam Avans (INR)" alanı ERPNext
   varsayılanlarından gelir; ülke-bazlı varsayılanlar Faz 2 yapılandırma
-  paketinde temizlenir.
+  paketinde temizlenir. → Avans alanı TRY olarak görüntüleniyor (Faz 2'de
+  Administrator/site dili tr'ye sabitlendi ✓).
 - Hesap planı hesap adları hâlâ İngilizce kaynak etiketlerle listelenir;
-  Faz 2'de THP tam seti (Türkçe adlarla) yüklenecek.
+  Faz 2'de THP tam seti (Türkçe adlarla) yüklenecek. → **Yüklendi: 337 THP
+  hesabı, çift kaynaklı doğrulama** (bkz. [FAZ2.md](FAZ2.md) §1 ✓).
 - Turkish Delight uygulamasının entegrasyonu Faz 2 kurulum paketiyle
-  değerlendirilecek (v15 uyumluluğu doğrulandıktan sonra).
+  değerlendirilecek (v15 uyumluluğu doğrulandıktan sonra). → Değerlendirildi:
+  TCKN/VKN, THP ve KDV işlevleri kendi SAF çekirdeğimizle karşılandı;
+  e-Fatura UBL-TR eşlemesinde referans alınacak (Faz 3, kod devralımı yok).
 
 ## Yeniden kurulum (tekrarlanabilirlik)
 

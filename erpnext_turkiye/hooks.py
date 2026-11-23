@@ -1,8 +1,8 @@
 """ERPNext Türkiye uygulama kancaları (hooks).
 
 Frappe dokümantasyonu: https://docs.frappe.io/framework/user/en/dynamic-links
-Faz 0 kapsamı: Kaynak Veri katmanının ilk kuralı — Customer/Supplier.tax_id
-alanına TCKN/VKN doğrulaması bağlanır (Faz 2'de genişletilir).
+Kaynak Veri katmanı: Customer/Supplier/Company.tax_id alanlarına TCKN/VKN
+doğrulaması bağlanır (Faz 2: tüm ana veri DocType'ları).
 """
 
 app_name = "erpnext_turkiye"
@@ -12,7 +12,7 @@ app_description = "Türkiye lokalizasyonu: e-belge, TCMB kur servisi, THP, TCKN/
 app_license = "mit"
 required_apps = ["erpnext"]
 
-# Kaynak Veri katmanı: ana veri doğrulama kuralları (Tablo 3 / Bölüm 5, Faz 2)
+# Kaynak Veri katmanı: ana veri doğrulama kuralları (Tablo 3 / Bölüm 5)
 doc_events = {
     "Customer": {
         "validate": "erpnext_turkiye.turkiye.frappe_olaylari.validate_tax_id",
@@ -20,9 +20,12 @@ doc_events = {
     "Supplier": {
         "validate": "erpnext_turkiye.turkiye.frappe_olaylari.validate_tax_id",
     },
+    "Company": {
+        "validate": "erpnext_turkiye.turkiye.frappe_olaylari.validate_tax_id",
+    },
 }
 
-# TCMB kur servisi: günlük otomatik çekim Faz 2'de devreye alınır.
-# scheduler_events = {
-#     "daily": ["erpnext_turkiye.turkiye.kur_servisi.gunluk_kur_coz"],
-# }
+# TCMB kur servisi: her gün bülteni çekip Currency Exchange kayıtlarını günceller
+scheduler_events = {
+    "daily": ["erpnext_turkiye.turkiye.kur_servisi.gunluk_kur_coz"],
+}

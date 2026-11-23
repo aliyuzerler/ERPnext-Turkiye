@@ -1,69 +1,157 @@
-"""Tek Düzen Hesap Planı (THP) başlangıç veri seti (Faz 2 çekirdeği).
+"""Tek Düzen Hesap Planı (THP) yardımcıları — tam set (Faz 2).
 
-Faz 0'da yaygın hesapların çekirdek seti tanımlıdır; Faz 2'de tam plan,
-hiyerarşi ve ERPNext hesap eşlemesiyle genişletilir.
+SAF katman: tam set verisi ``veriler.thp_verisi``'den dışa aktarılır.
+Site tarafı (frappe) yalnızca fonksiyon gövdelerinde import edilir
+(Faz 0 kapı kuralı: çekirdek kod sitesiz birim test edilebilir).
 
-Bu modül SAF Python'dur; frappe import etmez.
+bench kullanımı::
+
+    bench --site turkiye.local execute \\
+        erpnext_turkiye.turkiye.hesap_plani.thp_kur \\
+        --kwargs '{"sirket": "Anadolu Makine Sanayi A.Ş."}'
+
+Kaynaklar: vergiburosu.com THP sayfası + İSMMMO "Hesap Planı Açıklamaları"
+(kod ve adlar çapraz doğrulanmıştır; ayrıntı bkz. veriler.thp_verisi).
 """
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from typing import Any
 
-TURLER: tuple[str, ...] = ("Varlık", "Yükümlülük", "Özkaynak", "Gelir", "Gider")
-
-
-@dataclass(frozen=True)
-class Hesap:
-    """Tek Düzen hesap kaydı."""
-
-    kod: str
-    ad: str
-    tur: str
-
-
-BASLANGIC_THP: tuple[Hesap, ...] = (
-    Hesap("100", "Hazır Değerler", "Varlık"),
-    Hesap("102", "Bankalar", "Varlık"),
-    Hesap("120", "Alıcılar", "Varlık"),
-    Hesap("153", "Ticari Mallar", "Varlık"),
-    Hesap("191", "İndirilecek KDV", "Varlık"),
-    Hesap("213", "Borçlar", "Yükümlülük"),
-    Hesap("320", "Satıcılar", "Yükümlülük"),
-    Hesap("391", "Hesaplanan KDV", "Yükümlülük"),
-    Hesap("500", "Sermaye", "Özkaynak"),
-    Hesap("570", "Geçmiş Yıllar Kârları", "Özkaynak"),
-    Hesap("600", "Yurt İçi Satışlar", "Gelir"),
-    Hesap("610", "Yurt Dışı Satışlar", "Gelir"),
-    Hesap("621", "Satış İndirimleri", "Gider"),
-    Hesap("770", "Genel Yönetim Giderleri", "Gider"),
+from erpnext_turkiye.turkiye.veriler.thp_verisi import (
+    THP,
+    HesapKaydi,
+    ebeveyn_kodu,
+    grup_kodlari,
+    kod_ile,
+    thp_dogrula,
 )
 
+THP_TAM: tuple[HesapKaydi, ...] = THP
 
-def validate_thp(hesaplar: tuple[Hesap, ...] | list[Hesap]) -> list[str]:
-    """Veri seti tutarlılık denetimi: hata mesajları listesi (boş = temiz).
+__all__ = [
+    "KOKSZ_GRUPLAR",
+    "THP",
+    "THP_TAM",
+    "VARSAYILAN_HESAPLAR",
+    "HesapKaydi",
+    "ebeveyn_kodu",
+    "grup_kodlari",
+    "kod_ile",
+    "kok_hesaplarini_bul",
+    "sirket_hesap_varsayilanlari",
+    "thp_dogrula",
+    "thp_kur",
+]
 
-    Kurallar: kod benzersiz; kod tam 3 rakam; ad boş değil; tur geçerli bir
-    mali tablo türü.
+# 6 Gelir Tablosu grubu ERPNext'te fiziksel grup değildir: gelir çocukları
+# Income, gider çocukları Expense köküne bağlanır. 8 Serbest ve 9 Nazım
+# grupları tohum setinde yoktur (bkz. veriler.thp_verisi docstring'i).
+KOKSZ_GRUPLAR: frozenset[str] = frozenset({"6", "8", "9"})
+
+# Şirket varsayılan hesap alanı -> THP hesap kodu
+VARSAYILAN_HESAPLAR: dict[str, str] = {
+    "default_receivable_account": "120",
+    "default_payable_account": "320",
+    "default_cash_account": "100",
+    "default_bank_account": "102",
+    "default_income_account": "600",
+    "default_expense_account": "621",
+    "write_off_account": "689",
+    # ERPNext tek alan kullanır: kambiyo kârları 646; zararlar 656'ya
+    # dönem sonunda aktarılabilir (e-defter kapanış pratiği)
+    "exchange_gain_loss_account": "646",
+    "unrealized_exchange_gain_loss_account": "646",
+    "capital_work_in_progress_account": "258",
+    "accumulated_depreciation_account": "257",
+    "depreciation_expense_account": "796",
+}
+
+
+def kok_hesaplarini_bul(frappe_module: Any, sirket: str) -> dict[str, str]:
+    """Şirketin kök hesaplarını kök türüne göre döndürür (site tarafı yardımcısı).
+
+    frappe_module parametresi testlerde sahte (fake) modülle çağrılabilir;
+    üretimde frappe modülü geçirilir.
     """
-    hatalar: list[str] = []
-    gorulen: set[str] = set()
-    for hesap in hesaplar:
-        if hesap.kod in gorulen:
-            hatalar.append(f"Kod tekrarı: {hesap.kod}")
-        gorulen.add(hesap.kod)
-        if not (len(hesap.kod) == 3 and hesap.kod.isdigit()):
-            hatalar.append(f"Kod 3 rakam olmalı: {hesap.kod}")
-        if not hesap.ad:
-            hatalar.append(f"Ad boş olamaz: {hesap.kod}")
-        if hesap.tur not in TURLER:
-            hatalar.append(f"Geçersiz tür ({hesap.kod}): {hesap.tur}")
-    return hatalar
+    kokler: dict[str, str] = {}
+    for kok_tur in ("Asset", "Liability", "Equity", "Income", "Expense"):
+        adaylar = frappe_module.get_all(
+            "Account",
+            filters={"company": sirket, "root_type": kok_tur, "is_group": 1},
+            fields=["name", "parent_account"],
+        )
+        kokler[kok_tur] = next((a["name"] for a in adaylar if not a["parent_account"]), "")
+    return kokler
 
 
-def kod_ile(hesaplar: tuple[Hesap, ...] | list[Hesap], kod: str) -> Hesap:
-    """Koduna göre hesabı bulur; yoksa KeyError fırlatır."""
-    for hesap in hesaplar:
-        if hesap.kod == kod:
-            return hesap
-    raise KeyError(f"{kod} kodlu hesap bulunamadı")
+def thp_kur(sirket: str) -> dict[str, int]:
+    """THP tam setini şirkete kurar; var olan kodlar atlanır (idempotent).
+
+    Grup hesapları (1-2 haneli kodlar) is_group=1; yapraklar is_group=0
+    eklenir. Ebeveyn her zaman çocuklardan önce gelir (kod uzunluğu sırası).
+    """
+    import frappe
+
+    kokler = kok_hesaplarini_bul(frappe, sirket)
+    eksik = [tur for tur, ad in kokler.items() if not ad]
+    if eksik:
+        frappe.throw(f"{sirket} şirketinde kök hesapları eksik: {', '.join(eksik)}")
+
+    sonuc = {"olusturulan": 0, "atlanan": 0}
+    for hesap in THP_TAM:
+        if hesap.kod in KOKSZ_GRUPLAR:
+            continue
+        if frappe.db.exists("Account", {"account_number": hesap.kod, "company": sirket}):
+            sonuc["atlanan"] += 1
+            continue
+        if len(hesap.kod) == 1:
+            ebeveyn_docname = kokler[hesap.kok_tur]
+        else:
+            ebeveyn = ebeveyn_kodu(hesap.kod)
+            if ebeveyn in KOKSZ_GRUPLAR:
+                # 6 grubunun çocukları: gelir/gider köklerine bağlanır
+                ebeveyn_docname = kokler[hesap.kok_tur]
+            else:
+                ebeveyn_docname = frappe.db.get_value(
+                    "Account", {"account_number": ebeveyn, "company": sirket}
+                )
+                if not ebeveyn_docname:
+                    frappe.throw(f"Ebeveyn hesap bulunamadı ({hesap.kod} -> {ebeveyn})")
+        frappe.get_doc(
+            {
+                "doctype": "Account",
+                "company": sirket,
+                "account_number": hesap.kod,
+                "account_name": hesap.ad,
+                "parent_account": ebeveyn_docname,
+                "is_group": 1 if len(hesap.kod) <= 2 else 0,
+                "root_type": hesap.kok_tur,
+                "report_type": hesap.rapor_tur,
+                "account_type": hesap.hesap_turu or "",
+            }
+        ).insert(ignore_permissions=True)
+        sonuc["olusturulan"] += 1
+    frappe.db.commit()
+    return sonuc
+
+
+def sirket_hesap_varsayilanlari(sirket: str) -> dict[str, str]:
+    """Şirket varsayılan hesaplarını THP hesaplarına bağlar.
+
+    ERPNext sürümünde olmayan alanlar sessizce atlanır (get_meta denetimi).
+    """
+    import frappe
+
+    meta = frappe.get_meta("Company")
+    guncellenecek: dict[str, str] = {}
+    for alan, kod in VARSAYILAN_HESAPLAR.items():
+        if not meta.get_field(alan):
+            continue
+        docname = frappe.db.get_value("Account", {"account_number": kod, "company": sirket})
+        if docname:
+            guncellenecek[alan] = docname
+    if guncellenecek:
+        frappe.db.set_value("Company", sirket, guncellenecek, update_modified=False)
+        frappe.db.commit()
+    return guncellenecek

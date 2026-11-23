@@ -30,6 +30,10 @@ export default tseslint.config(
         process: "readonly",
         setTimeout: "readonly",
         clearTimeout: "readonly",
+        // Playwright sayfa.evaluate gövdesinde tarayıcı globali kullanılır
+        document: "readonly",
+        window: "readonly",
+        fetch: "readonly",
       },
     },
   },

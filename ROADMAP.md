@@ -33,15 +33,18 @@ karar tabloları proje dokümanında (yol haritası dokümanı v2.0) yer alır.
   kanıt: [docs/FAZ1.md](docs/FAZ1.md), duman testleri 7/7 PASS.
 - Not: Turkish Delight entegrasyonu Faz 2 kurulum paketiyle değerlendirilecek.
 
-## Faz 2 — Türkiye Lokalizasyon Paketi (4 hafta, H4-H7)
+## Faz 2 — Türkiye Lokalizasyon Paketi ✅ (tamamlandı)
 
-- Hesap planı (THP tam set) ve KDV setleri (%1/%10/%20 + tevkifat kesirleri).
+- Hesap planı (THP tam set: 338 hesap, iki kaynaklı çapraz doğrulama) ve
+  KDV setleri (%1/%10/%20 alış/satış/kalem şablonları + parametrik tevkifat).
 - TCKN/VKN doğrulamasının tüm ana veri DocType'larına bağlanması
-  (Faz 0'daki `kimlik.py` çekirdeği genişletilir).
+  (Customer + Supplier + Company; tüzel kişide VKN zorunlu).
 - TCMB kur servisinin günlük zamanlayıcıyla devreye alınması
-  (`hooks.py` scheduler_events aktivasyonu).
-- İl/ilçe veri yapısı; ana veri doğrulama kuralları (Kaynak Veri katmanı).
-- Çıkış kriteri (KM-2): örnek fatura verisi doğrulama kurallarından geçiyor.
+  (`hooks.py` scheduler_events aktivasyonu; canlı çekim doğrulandı).
+- İl/ilçe veri yapısı (81 il / 973 ilçe → Territory ağacı 1054 kayıt);
+  ana veri doğrulama kuralları (Kaynak Veri katmanı).
+- Çıkış kriteri (KM-2) ✅: örnek fatura verisi doğrulama kurallarından
+  geçiyor — kanıt: [docs/FAZ2.md](docs/FAZ2.md), duman testleri 11/11 PASS.
 
 ## Faz 3 — e-Dönüşüm Entegrasyonu (5 hafta, H8-H12)
 

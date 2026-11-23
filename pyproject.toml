@@ -15,7 +15,12 @@ dependencies = []
 
 [tool.setuptools]
 # flat-layout kökünde tests/, scripts/ var — setuptools'a yalnızca uygulama paketini söyle
-packages = ["erpnext_turkiye", "erpnext_turkiye.config", "erpnext_turkiye.turkiye"]
+packages = [
+    "erpnext_turkiye",
+    "erpnext_turkiye.config",
+    "erpnext_turkiye.turkiye",
+    "erpnext_turkiye.turkiye.veriler",
+]
 
 [project.optional-dependencies]
 dev = ["ruff>=0.8", "mypy>=1.14", "pytest>=8.3"]
@@ -41,7 +46,8 @@ no_implicit_optional = true
 strict_equality = true
 
 [[tool.mypy.overrides]]
-module = ["frappe", "frappe.*"]
+# frappe / erpnext, bench çalışma zamanı tarafından sağlanır (sitesiz araç zincirinde yok)
+module = ["frappe", "frappe.*", "erpnext", "erpnext.*"]
 ignore_missing_imports = true
 
 [tool.pytest.ini_options]

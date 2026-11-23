@@ -13,8 +13,10 @@ from __future__ import annotations
 def validate_tax_id(doc: object, method: str | None = None) -> None:
     """``tax_id`` alanı doluysa TCKN (11 hane) ya da VKN (10 hane) doğrula.
 
-    Kaynak Veri katmanının ilk kuralı: iletime çıkmadan önce vergi
-    numaralarının güvenilir olması (Tablo 3, dört katmanlı mimari).
+    Kaynak Veri katmanı kuralı (Tablo 3): iletime çıkmadan önce vergi
+    numaralarının güvenilir olması. Company DocType'ı tüzel kişilere
+    aittir: yalnızca 10 haneli VKN kabul edilir (şahıs şirketlerinin GİB
+    VKN'si de VKN algoritmasından geçer).
     """
     try:
         import frappe
@@ -27,6 +29,10 @@ def validate_tax_id(doc: object, method: str | None = None) -> None:
     if not tax_id:
         return
     temiz = normalize(tax_id)
+    if getattr(doc, "doctype", "") == "Company":
+        if len(temiz) == 10 and validate_vkn(temiz):
+            return
+        frappe.throw(f"Şirket için geçerli bir VKN gerekli (10 hane): {tax_id}")
     if len(temiz) == 11 and validate_tckn(temiz):
         return
     if len(temiz) == 10 and validate_vkn(temiz):

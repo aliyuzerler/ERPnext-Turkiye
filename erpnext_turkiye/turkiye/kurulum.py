@@ -667,3 +667,186 @@ def rol_profilleri_kur() -> list[str]:
         olusan.append(ad)
     frappe.db.commit()
     return olusan
+
+
+def faz5_kurulum() -> dict[str, object]:
+    """Faz 5 site kurulumu: bordro yapısı + çalışan + örnek bordro.
+
+    Kurulanlar: Temel Ücret bileşeni, "Türkiye Standart" Salary Structure
+    (Faz 4 bileşen setiyle: SGK %14, İşsizlik %1, Damga binde 7,59, GV
+    tarifeden), örnek çalışan, Salary Structure Assignment (brüt 60.000)
+    ve Kasım 2026 Salary Slip'i — SAF bordro_hesapla ile çapraz
+    doğrulama yapar (UAT-İK senaryosunun temeli).
+    """
+    import frappe
+
+    if "hrms" not in frappe.get_installed_apps():
+        frappe.throw("Bordro yapısı hrms uygulaması ister")
+    ozet: dict[str, object] = {}
+    ozet["bilesen"] = _temel_ucret_bileseni()
+    ozet["yapı"] = bordro_yapisi_kur()
+    ozet["calisan"] = ornek_calisan_kur()
+    ozet["atama"] = bordro_atama_kur(60000.0)
+    ozet["bordro"] = ornek_bordro_kes("2026-11")
+    frappe.db.commit()
+    return ozet
+
+
+def _temel_ucret_bileseni() -> str:
+    """Earnings baz bileşeni: Temel Ücret (base)."""
+    import frappe
+
+    ad = "Temel Ücret"
+    if not frappe.db.exists("Salary Component", ad):
+        frappe.get_doc(
+            {
+                "doctype": "Salary Component",
+                "salary_component": ad,
+                "type": "Earning",
+                "amount_based_on_formula": 1,
+                "formula": "base",
+                "abbr": "TU",
+            }
+        ).insert(ignore_permissions=True)
+        frappe.db.commit()
+    return ad
+
+
+def bordro_yapisi_kur() -> str:
+    """'Türkiye Standart' Salary Structure (Faz 4 bileşen setiyle)."""
+    import frappe
+
+    ad = "Türkiye Standart"
+    if frappe.db.exists("Salary Structure", ad):
+        return ad
+    sirket = frappe.db.get_value("Company", {}, "name")
+    if not sirket:
+        frappe.throw("Şirket yok; önce sirket_olustur çalıştırın")
+    kesintiler = ["SGK İşçi Payı", "İşsizlik Sigortası İşçi Payı", "Damga Vergisi", "Gelir Vergisi"]
+    frappe.get_doc(
+        {
+            "doctype": "Salary Structure",
+            "salary_structure": ad,
+            "company": sirket,
+            "currency": "TRY",
+            "payroll_frequency": "Monthly",
+            "is_active": 1,
+            "earnings": [
+                {
+                    "salary_component": "Temel Ücret",
+                    "abbreviation": "TU",
+                    "amount_based_on_formula": 1,
+                    "formula": "base",
+                }
+            ],
+            "deductions": [
+                {"salary_component": k, "amount_based_on_formula": 1} for k in kesintiler
+            ],
+        }
+    ).insert(ignore_permissions=True)
+    frappe.db.commit()
+    return ad
+
+
+def ornek_calisan_kur() -> str:
+    """UAT örnek çalışanı (Aydın Kaya; girişin üstü brüt maaş senaryosu)."""
+    import frappe
+
+    if frappe.db.exists("Employee", {"employee_name": "Aydın Kaya"}):
+        return str(frappe.db.get_value("Employee", {"employee_name": "Aydın Kaya"}, "name"))
+    sirket = frappe.db.get_value("Company", {}, "name")
+    calisan = frappe.get_doc(
+        {
+            "doctype": "Employee",
+            "first_name": "Aydın",
+            "last_name": "Kaya",
+            "employee_name": "Aydın Kaya",
+            "company": sirket,
+            "gender": "Male",
+            "date_of_birth": "1990-05-17",
+            "date_of_joining": "2026-01-05",
+            "designation": "Muhasebe Uzmanı",
+            "status": "Active",
+        }
+    )
+    calisan.insert(ignore_permissions=True)
+    frappe.db.commit()
+    return str(calisan.name)
+
+
+def bordro_atama_kur(brut: float) -> str:
+    """Salary Structure Assignment: brüt ücretle yapıyı çalışana bağlar."""
+    import frappe
+
+    calisan = ornek_calisan_kur()
+    sirket = frappe.db.get_value("Company", {}, "name")
+    varolan = frappe.db.get_value(
+        "Salary Structure Assignment",
+        {"employee": calisan, "salary_structure": "Türkiye Standart"},
+        "name",
+    )
+    if varolan:
+        frappe.db.set_value("Salary Structure Assignment", varolan, "base", brut)
+        frappe.db.commit()
+        return str(varolan)
+    atama = frappe.get_doc(
+        {
+            "doctype": "Salary Structure Assignment",
+            "employee": calisan,
+            "salary_structure": "Türkiye Standart",
+            "company": sirket,
+            "from_date": "2026-11-01",
+            "currency": "TRY",
+            "base": brut,
+        }
+    )
+    atama.insert(ignore_permissions=True)
+    frappe.db.commit()
+    return str(atama.name)
+
+
+def ornek_bordro_kes(donem: str) -> dict[str, object]:
+    """Salary Slip üretir ve SAF bordro_hesapla ile karşılaştırır.
+
+    ``donem``: "YYYY-MM". Dönüş: slip net tutarı, SAF net tutarı, fark.
+    """
+    import frappe
+    from decimal import Decimal
+
+    from erpnext_turkiye.turkiye.bordro.vergi import bordro_hesapla
+
+    calisan = ornek_calisan_kur()
+    sirket = frappe.db.get_value("Company", {}, "name")
+    yil, ay = donem.split("-")
+    baslangic = f"{donem}-01"
+    bitis = f"{donem}-30" if ay == "11" else f"{donem}-28"
+    varolan = frappe.db.get_value(
+        "Salary Slip", {"employee": calisan, "start_date": baslangic}, "name"
+    )
+    if varolan:
+        frappe.delete_doc("Salary Slip", varolan, force=True)
+    slip = frappe.get_doc(
+        {
+            "doctype": "Salary Slip",
+            "employee": calisan,
+            "company": sirket,
+            "salary_structure": "Türkiye Standart",
+            "start_date": baslangic,
+            "end_date": bitis,
+            "currency": "TRY",
+            "payroll_frequency": "Monthly",
+        }
+    )
+    slip.insert(ignore_permissions=True)
+    slip.calculate_net_pay()
+    net_site = float(slip.net_pay or 0)
+    brut = float(frappe.db.get_value("Salary Structure Assignment", {"employee": calisan}, "base") or 0)
+    saf = bordro_hesapla(brut, kumulatif_matrah=0.0)
+    frappe.db.commit()
+    return {
+        "brut": brut,
+        "site_net": net_site,
+        "saf_net": saf["net"],
+        "fark": float(Decimal(str(net_site)) - Decimal(str(saf["net"]))),
+        "saf_kirilim": {k: saf[k] for k in ("sgk", "isssizlik", "gv", "dv")},
+    }

@@ -85,7 +85,9 @@ def test_tutar_formati_ve_mantigi() -> None:
     """Borç satırı debitAmount, alacak satırı creditAmount; tutarlar 2 hane."""
     xml = xbrlgl_yevmiye(KAYITLAR, VKN, UNVAN, 2026)
     assert "entryDetailDebitAmount" in xml and "entryDetailCreditAmount" in xml
-    assert ">12000.00<entryDetailCreditAmount" not in xml.replace(" ", "")  # borç, alacak alanında değil
+    assert ">12000.00<" in xml  # iki hane sabit
+    # borç tutarı alacak alanında yazılmamalı (ayrı elementler)
+    assert "<entryDetailCreditAmount>12000.00" not in xml
 
 
 def test_kebir_ozeti_hesap_bazli() -> None:

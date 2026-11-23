@@ -575,6 +575,7 @@ def gelir_vergisi_dilimleri_kur() -> str:
             "doctype": "Income Tax Slab",
             "name": ad,
             "enabled": 1,
+            "effective_from": "2026-01-01",
             "salary_slab_based_on": "Yearly",
             "currency": "TRY",
             "slabs": dilimler,

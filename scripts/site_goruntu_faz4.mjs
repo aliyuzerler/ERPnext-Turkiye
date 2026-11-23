@@ -65,7 +65,7 @@ try {
   dumanTest("Yılbaşı satırı", /Yılbaşı/.test(tatil));
   dumanTest("Ramazan Bayramı satırı", /Ramazan Bayramı/.test(tatil));
   dumanTest("Kurban arifesi yarım gün", /Kurban Bayramı Arifesi \(yarım gün\)/.test(tatil));
-  const tatilSatirlari = (tatil.match(/2026-\d\d-\d\d/g) || []).length;
+  const tatilSatirlari = (tatil.match(/\d\d-\d\d-2026/g) || []).length;
   dumanTest("17 tatil satırı", tatilSatirlari >= 17);
 } finally {
   await tarayici.close();

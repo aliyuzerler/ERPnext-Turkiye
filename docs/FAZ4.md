@@ -61,16 +61,36 @@ System Manager + Accounts User). Kullanıcıya profil atamak:
 `Kullanıcı → Role Profile` alanı; izinler frappe Role Profile mekanizmasıyla
 kalıtılır.
 
-## 5. Ortam notu — yığın yeniden kurulumu
+## 5. Ortam notu — yığın yeniden kurulumu ve site kanıtları
 
 Sandbox geri dönüşümü yerel yığını (venv, site, MariaDB veri dizini) temizledi;
 **kod uzakta güvende** olduğundan kurtarma tamamen GitHub klonu + `scripts/
-yigin_yeniden_kur.sh` ile yapıldı: MariaDB 10.6 bintar (TCP 3306, root/admin,
-devam-etmeli indirme), redis (cache 11311 / queue 11000), `bench init` (frappe
-version-15), get-app erpnext + **hrms** + erpnext_turkiye, site `turkiye.local`.
-Faz 1-3 site verisi kurulum fonksiyonlarıyla (kod-dan) yeniden üretilir:
-`site_tr_ayarlari → sirket_olustur → demo_verisi_olustur → faz2_kurulum →
-km2_fatura_dogrulamasi → km3_fatura_gonder → faz4_kurulum`.
+yigin_yeniden_kur.sh` ile yapıldı: MariaDB 10.6.22 bintar (TCP 3306, root/admin,
+devam-etmeli indirme), redis 7.0.15 (cache 11311 / queue 11000 / socketio
+13000), `bench init` (frappe version-15), get-app erpnext 15.126.0 +
+**hrms 15.64.9** + erpnext_turkiye, site `turkiye.local`.
+
+Site veri zinciri (`scripts/faz4_kosucu.py` — bench execute izleri maskelendiği
+için tam traceback'li koşucu) 8/8 adımla tamamlandı:
+
+| Adım | Sonuç |
+| --- | --- |
+| site_tr_ayarlari | dil tr, Europe/Istanbul, Türkiye |
+| warehouse_turleri_tamamla | Transit Warehouse Type (v15.126 tohumlamıyor) |
+| sirket_olustur | Anadolu Makine Sanayi A.Ş. |
+| demo_verisi_olustur | müşteri/tedarikçi/kalem seti |
+| faz2_kurulum | **THP 337 hesap**, KDV setleri (9 şablon), 81 il / 1054 bölge |
+| km2_fatura_dogrulamasi | ACC-SINV-2026-00001, KDV 2.000,00, geçersiz VKN reddi ✓ |
+| km3_fatura_gonder | E-BLG-2026-00001, UUID üretildi ✓ |
+| faz4_kurulum | 6 bileşen + slab + 6 izin türü + tatil listesi + 3 profil + 3 proje türü |
+
+Doğrulama katmanları:
+- `scripts/faz4_dogrulama.py` — **21/21 PASS** (formüller SAF oranlarıyla
+  birebir; slab 5 dilim %15/20/27/35/40; izin üst sınırları 112/5/26;
+  tatil 17 satır SAF verisiyle tarih-tarih eşleşme; rol profilleri).
+- `scripts/site_goruntu_faz4.mjs` — canlı sitede **11/11 duman testi PASS**;
+  ekran görüntüleri `docs/ekran-goruntuleri/14-bordro-bilesenleri.png`,
+  `15-izin-turleri.png`, `16-tatil-listesi-2026.png`.
 
 ## 6. Bilinen notlar
 

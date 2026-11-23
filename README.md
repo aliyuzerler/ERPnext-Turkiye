@@ -5,7 +5,7 @@ e-İrsaliye, e-Defter), TCMB döviz kuru servisi, Tek Düzen Hesap Planı (THP) 
 TCKN/VKN doğrulama. Yol haritası, Viva Yazılım'ın kamuya açık e-Dönüşüm ve
 ERPNext hizmet yaklaşımı temel alınarak hazırlanmıştır (bkz. ROADMAP.md).
 
-## Proje durumu — Faz 3 çekirdeği tamamlandı
+## Proje durumu — Faz 4 çekirdeği tamamlandı
 
 | Faz   | Kapsam                                                    | Durum                  |
 | ----- | --------------------------------------------------------- | ---------------------- |
@@ -13,14 +13,16 @@ ERPNext hizmet yaklaşımı temel alınarak hazırlanmıştır (bkz. ROADMAP.md)
 | Faz 1 | Kurulum ve temel yapılandırma (Türkçe arayüz)             | ✅ Tamamlandı          |
 | Faz 2 | Türkiye lokalizasyon paketi (THP, KDV, TCKN/VKN, TCMB)    | ✅ Tamamlandı          |
 | Faz 3 | e-Dönüşüm entegrasyonu (UBL-TR, iletim, panosu)           | ✅ Çekirdek tamamlandı |
-| Faz 4 | İK-Bordro ve kalan modüller (entegratör hesabı, e-Defter) | Beklemede              |
-| Faz 5 | UAT, eğitim ve kontrollü canlı geçiş                      | Beklemede              |
+| Faz 4 | İK-Bordro ve kalan modüller (SAF bordro + hrms seti)      | ✅ Çekirdek tamamlandı |
+| Faz 5 | UAT, eğitim ve kontrollü canlı geçiş (entegratör, e-Defter)| Beklemede             |
 
 Faz 1 çıktıları ve Türkçe arayüz ekran görüntüleri: [docs/FAZ1.md](docs/FAZ1.md)
 Faz 2 çıktıları (THP tam set, KDV setleri, TCMB, il/ilçe, KM-2 kanıtı):
 [docs/FAZ2.md](docs/FAZ2.md)
 Faz 3 çıktıları (UBL-TR üretimi, XSD doğrulaması/KM-3, iletim kuyruğu, e-belge
 panosu): [docs/FAZ3.md](docs/FAZ3.md)
+Faz 4 çıktıları (SAF bordro çekirdeği, hrms bileşen seti, GİB 2026 tarifesi,
+izin türleri, resmî tatiller, rol profilleri): [docs/FAZ4.md](docs/FAZ4.md)
 
 ## Faz çıkış kuralı
 

@@ -810,14 +810,15 @@ def ornek_bordro_kes(donem: str) -> dict[str, object]:
 
     ``donem``: "YYYY-MM". Dönüş: slip net tutarı, SAF net tutarı, fark.
     """
-    import frappe
     from decimal import Decimal
+
+    import frappe
 
     from erpnext_turkiye.turkiye.bordro.vergi import bordro_hesapla
 
     calisan = ornek_calisan_kur()
     sirket = frappe.db.get_value("Company", {}, "name")
-    yil, ay = donem.split("-")
+    ay = donem.split("-")[1]
     baslangic = f"{donem}-01"
     bitis = f"{donem}-30" if ay == "11" else f"{donem}-28"
     varolan = frappe.db.get_value(
@@ -840,7 +841,9 @@ def ornek_bordro_kes(donem: str) -> dict[str, object]:
     slip.insert(ignore_permissions=True)
     slip.calculate_net_pay()
     net_site = float(slip.net_pay or 0)
-    brut = float(frappe.db.get_value("Salary Structure Assignment", {"employee": calisan}, "base") or 0)
+    brut = float(
+        frappe.db.get_value("Salary Structure Assignment", {"employee": calisan}, "base") or 0
+    )
     saf = bordro_hesapla(brut, kumulatif_matrah=0.0)
     frappe.db.commit()
     return {

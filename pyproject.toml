@@ -22,6 +22,7 @@ packages = [
     "erpnext_turkiye.turkiye",
     "erpnext_turkiye.turkiye.veriler",
     "erpnext_turkiye.turkiye.ebelge",
+    "erpnext_turkiye.turkiye.bordro",
 ]
 
 [tool.setuptools.package-data]

@@ -60,3 +60,23 @@ def validate_vkn(value: str) -> bool:
         toplam += tmp2
     kontrol = 0 if toplam % 10 == 0 else 10 - (toplam % 10)
     return int(vkn[9]) == kontrol
+
+
+def vkn_uret(ilk_dokuz: str) -> str:
+    """GİB usulüyle kontrol hanesi üreterek geçerli biçimli bir VKN kurar.
+
+    Yalnızca demo/test verisi üretimi içindir; validate_vkn ile aynı
+    formülün tersidir (öz-tutarlılık testi test_kimlik.py'de).
+    """
+    dokuz = normalize(ilk_dokuz)[:9]
+    if len(dokuz) != 9 or not dokuz.isdigit():
+        raise ValueError(f"9 haneli sayı bekleniyor: {ilk_dokuz!r}")
+    toplam = 0
+    for x in range(9):
+        tmp1 = (int(dokuz[x]) + (9 - x)) % 10
+        tmp2 = (tmp1 * (2 ** (9 - x))) % 9
+        if tmp1 != 0 and tmp2 == 0:
+            tmp2 = 9
+        toplam += tmp2
+    kontrol = 0 if toplam % 10 == 0 else 10 - (toplam % 10)
+    return dokuz + str(kontrol)

@@ -100,6 +100,10 @@ def sirket_olustur(
     if mevcut:
         return {"company": ad, "durum": "zaten var"}
 
+    # şirket VKN'si demo müşterisi VKN'sinden farklı olmalı: GİB usulüyle
+    # üretilmiş ayrı bir geçerli vektör (kimlik.vkn_uret + validate_vkn)
+    from erpnext_turkiye.turkiye.kimlik import vkn_uret
+
     doc = frappe.get_doc(
         {
             "doctype": "Company",
@@ -109,7 +113,7 @@ def sirket_olustur(
             "default_currency": "TRY",
             "chart_of_accounts": "Standard with Numbers",
             "company_email": "info@ornek.local",
-            "tax_id": "3456789014",  # test vektörü (geçerli VKN algoritması)
+            "tax_id": vkn_uret("555444333"),  # -> 5554443334
         }
     )
     doc.insert(ignore_permissions=True)
@@ -264,6 +268,87 @@ def faz2_kurulum() -> dict[str, object]:
         "varsayilanlar": sirket_hesap_varsayilanlari(sirket),
         "kdv": kdv_kur(sirket),
         "territory": territory_kur(),
+    }
+
+
+def party_turleri_tamamla() -> list[str]:
+    """ERPNext v15 sihirbazsız kurulumda eksik kalan Party Type kayıtlarını kurar.
+
+    GL Entry'de alacak/borç hesaplarına party yazabilmek için "Customer",
+    "Supplier" vb. Party Type kayıtları gerekir (gözlemlenen kurulum
+    sırası sorunu; Faz 1 Warehouse Type vakasıyla aynı).
+    """
+    import frappe
+
+    turler = ["Customer", "Supplier", "Employee", "Student", "Shareholder"]
+    eklenen: list[str] = []
+    for tur in turler:
+        if frappe.db.exists("Party Type", tur):
+            continue
+        # party_type alanı DocType'a Link'tir: kurulu olmayan modül
+        # doctype'ları (örn. Student) atlanır
+        if not frappe.db.exists("DocType", tur):
+            continue
+        # Party Type autoname'i field:party_type — alanı vermek şart
+        frappe.get_doc({"doctype": "Party Type", "party_type": tur}).insert(
+            ignore_permissions=True
+        )
+        eklenen.append(tur)
+    frappe.db.commit()
+    return eklenen
+
+
+def km3_fatura_gonder() -> dict[str, object]:
+    """KM-3 site kanıtı: taslak faturayı gönderir; UBL-TR üretimi + kayıt açılır.
+
+    on_submit kancası UBL-TR XML'i üretir, OASIS XSD doğrulamasından geçirir
+    ve E Belge Gonderim kaydını açar (şemadan geçmeyen fatura gönderilemez).
+    """
+    import frappe
+
+    party_turleri_tamamla()
+    sirket = frappe.get_all("Company", pluck="name")[0]
+    # gönderim muhasebe kaydı açar: açık mali yıl garanti edilir
+    yil = int(frappe.utils.nowdate()[:4])
+    if not frappe.db.exists("Fiscal Year", {"year": str(yil)}):
+        frappe.get_doc(
+            {
+                "doctype": "Fiscal Year",
+                "year": str(yil),
+                "year_start_date": f"{yil}-01-01",
+                "year_end_date": f"{yil}-12-31",
+                "disabled": 0,
+                "companies": [{"company": sirket}],
+            }
+        ).insert(ignore_permissions=True)
+        frappe.db.commit()
+
+    fatura_adi = frappe.get_all(
+        "Sales Invoice",
+        filters={"docstatus": 0},
+        order_by="creation desc",
+        limit_page_length=1,
+        pluck="name",
+    )
+    if not fatura_adi:
+        frappe.throw("Taslak fatura yok; kurulum.km2_fatura_dogrulamasi çalıştırın")
+    doc = frappe.get_doc("Sales Invoice", fatura_adi[0])
+    doc.submit()
+    frappe.db.commit()
+    kayit = frappe.db.get_value(
+        "E Belge Gonderim",
+        {"fatura": doc.name},
+        ["name", "durum", "uuid", "alici_vkn"],
+        as_dict=True,
+    )
+    if not kayit:
+        frappe.throw("on_submit kancası e-belge kaydı açmadı")
+    return {
+        "fatura": doc.name,
+        "e_belge": kayit.name,
+        "durum": kayit.durum,
+        "uuid": kayit.uuid,
+        "alici_vkn": kayit.alici_vkn,
     }
 
 

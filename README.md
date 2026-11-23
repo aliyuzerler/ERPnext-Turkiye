@@ -5,20 +5,22 @@ e-İrsaliye, e-Defter), TCMB döviz kuru servisi, Tek Düzen Hesap Planı (THP) 
 TCKN/VKN doğrulama. Yol haritası, Viva Yazılım'ın kamuya açık e-Dönüşüm ve
 ERPNext hizmet yaklaşımı temel alınarak hazırlanmıştır (bkz. ROADMAP.md).
 
-## Proje durumu — Faz 2 tamamlandı
+## Proje durumu — Faz 3 çekirdeği tamamlandı
 
-| Faz   | Kapsam                                                 | Durum         |
-| ----- | ------------------------------------------------------ | ------------- |
-| Faz 0 | Keşif, iskelet, kalite kapıları                        | ✅ Tamamlandı |
-| Faz 1 | Kurulum ve temel yapılandırma (Türkçe arayüz)          | ✅ Tamamlandı |
-| Faz 2 | Türkiye lokalizasyon paketi (THP, KDV, TCKN/VKN, TCMB) | ✅ Tamamlandı |
-| Faz 3 | e-Dönüşüm entegrasyonu (4 katmanlı mimari)             | Beklemede     |
-| Faz 4 | İK-Bordro ve kalan modüller                            | Beklemede     |
-| Faz 5 | UAT, eğitim ve kontrollü canlı geçiş                   | Beklemede     |
+| Faz   | Kapsam                                                    | Durum                  |
+| ----- | --------------------------------------------------------- | ---------------------- |
+| Faz 0 | Keşif, iskelet, kalite kapıları                           | ✅ Tamamlandı          |
+| Faz 1 | Kurulum ve temel yapılandırma (Türkçe arayüz)             | ✅ Tamamlandı          |
+| Faz 2 | Türkiye lokalizasyon paketi (THP, KDV, TCKN/VKN, TCMB)    | ✅ Tamamlandı          |
+| Faz 3 | e-Dönüşüm entegrasyonu (UBL-TR, iletim, panosu)           | ✅ Çekirdek tamamlandı |
+| Faz 4 | İK-Bordro ve kalan modüller (entegratör hesabı, e-Defter) | Beklemede              |
+| Faz 5 | UAT, eğitim ve kontrollü canlı geçiş                      | Beklemede              |
 
 Faz 1 çıktıları ve Türkçe arayüz ekran görüntüleri: [docs/FAZ1.md](docs/FAZ1.md)
 Faz 2 çıktıları (THP tam set, KDV setleri, TCMB, il/ilçe, KM-2 kanıtı):
 [docs/FAZ2.md](docs/FAZ2.md)
+Faz 3 çıktıları (UBL-TR üretimi, XSD doğrulaması/KM-3, iletim kuyruğu, e-belge
+panosu): [docs/FAZ3.md](docs/FAZ3.md)
 
 ## Faz çıkış kuralı
 
@@ -45,9 +47,13 @@ erpnext_turkiye/          Frappe uygulaması
     kur_servisi.py        TCMB günlük kur XML + Currency Exchange + scheduler
     hesap_plani.py        THP tam set + şirket THP kurulumu/varsayılanları
     yerlesim.py           İl/ilçe Territory kurulumu (site tarafı)
-    kurulum.py            Site kurulum yardımcıları (faz2_kurulum, KM-2)
+    kurulum.py            Site kurulum yardımcıları (faz2/3, KM-2/KM-3 kanıtları)
     frappe_olaylari.py    Frappe doc_event yapışkan katmanı
-frontend/src/             TypeScript kaynakları (e-belge durum panosu)
+    ebelge/               e-Dönüşüm (SAF): UBL-TR üretici + irsaliye taslağı,
+                          XSD seti (OASIS UBL 2.1), iletim kuyruğu;
+                          olaylari.py = fatura kancaları, api.py = panosu API
+    doctype/e_belge_gonderim/  E-belge kayıtları (durum takibi + XML saklama)
+frontend/src/             TypeScript kaynakları (e-belge durum panosu — canlı API modu)
 erpnext_turkiye/public/js/  tsc çıktısı (üretilmiş, depoya girmez... girmezse CI derler)
 tests/                    Birim testler (hermetik; ağ/site gerekmez)
 e2e/                      Playwright uçtan uca testler + önizleme sayfası

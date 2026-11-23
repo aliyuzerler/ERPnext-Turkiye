@@ -46,17 +46,23 @@ karar tabloları proje dokümanında (yol haritası dokümanı v2.0) yer alır.
 - Çıkış kriteri (KM-2) ✅: örnek fatura verisi doğrulama kurallarından
   geçiyor — kanıt: [docs/FAZ2.md](docs/FAZ2.md), duman testleri 11/11 PASS.
 
-## Faz 3 — e-Dönüşüm Entegrasyonu (5 hafta, H8-H12)
+## Faz 3 — e-Dönüşüm Entegrasyonu ✅ (çekirdek tamamlandı)
 
-Dört katmanlı mimari sırayla:
-
-1. **Dönüşüm:** UBL-TR eşleme modülü (Turkish Delight e-Fatura çekirdeği genişletilir).
-2. **İletim:** entegratör bağımsız adaptör + yeniden deneme kuyruğu.
-3. **Belge türleri:** e-Fatura → e-Arşiv → e-İrsaliye → e-Defter.
-4. **İzleme:** e-belge durum panosu canlı veriye bağlanır (Faz 0 bileşeni).
+1. **Dönüşüm:** UBL-TR 1.2 eşleme modülü (SAF `ebelge/`) — yapı GİB resmî
+   örnek faturalarından, şema seti OASIS UBL 2.1'den (repoya tedarik).
+2. **İletim:** entegratör bağımsız adaptör sözleşmesi + üstel geri çekilme
+   ile yeniden deneme kuyruğu (SAF, hermetik testli); entegratör hesap
+   anahtarının bağlanması Faz 4 kurulum paketinde.
+3. **Belge türleri:** e-Fatura ✅ (tam eşleme) · e-İrsaliye ✅ (taslak,
+   XSD-geçer) · e-Arşiv (aynı UBL, kapsam kaydı) · e-Defter (Faz 4).
+4. **İzleme:** e-belge durum panosu canlı veriye bağlandı
+   (`ebelge.api.ebelge_ozeti` + `EBelgePanel.canliOlustur`); E Belge
+   Gonderim doctype + Sales Invoice on_submit kancası (şemadan geçmeyen
+   fatura kuyruğa girmez).
 
 - Viva'nın beş adımlı yayına çıkış listesi çıkış kriterlerine eklenir.
-- Çıkış kriteri (KM-3): test faturaları entegratör test ortamında şema doğrulamasından geçiyor.
+- Çıkış kriteri (KM-3) ✅: fatura XML'leri UBL 2.1 şema doğrulamasından
+  geçiyor — kanıt: [docs/FAZ3.md](docs/FAZ3.md), duman testleri 8/8 PASS.
 
 ## Faz 4 — İK-Bordro ve Kalan Modüller (3 hafta, H13-H15)
 

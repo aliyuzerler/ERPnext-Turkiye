@@ -9,9 +9,10 @@ description = "Türkiye lokalizasyonu: e-belge, TCMB kur servisi, Tek Düzen Hes
 requires-python = ">=3.10"
 license = { file = "LICENSE" }
 authors = [{ name = "aliyuzerler" }]
-# frappe / erpnext, bench çalışma zamanı tarafından sağlanır;
-# çekirdek modüllerin (erpnext_turkiye.turkiye.*) hiçbir üçüncü taraf bağımlılığı yoktur.
-dependencies = []
+# frappe / erpnext, bench çalışma zamanı tarafından sağlanır.
+# xmlschema: KM-3 şema doğrulaması (UBL-TR XML, repodaki XSD setiyle) çalışma
+# zamanında da koşar — bench get-app bu bağımlılığı kurar.
+dependencies = ["xmlschema>=3"]
 
 [tool.setuptools]
 # flat-layout kökünde tests/, scripts/ var — setuptools'a yalnızca uygulama paketini söyle
@@ -20,10 +21,15 @@ packages = [
     "erpnext_turkiye.config",
     "erpnext_turkiye.turkiye",
     "erpnext_turkiye.turkiye.veriler",
+    "erpnext_turkiye.turkiye.ebelge",
 ]
 
+[tool.setuptools.package-data]
+# OASIS UBL 2.1 XSD seti (KM-3 şema doğrulaması) pakete gömülüdür
+"erpnext_turkiye.turkiye.ebelge" = ["xsd/**/*.xsd"]
+
 [project.optional-dependencies]
-dev = ["ruff>=0.8", "mypy>=1.14", "pytest>=8.3"]
+dev = ["ruff>=0.8", "mypy>=1.14", "pytest>=8.3", "xmlschema>=3"]
 
 [tool.ruff]
 line-length = 100

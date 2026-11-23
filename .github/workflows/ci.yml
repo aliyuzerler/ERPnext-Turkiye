@@ -16,7 +16,7 @@ jobs:
         with:
           python-version: "3.12"
       - name: Araçları kur
-        run: pip install ruff mypy pytest
+        run: pip install ruff mypy pytest xmlschema
       - name: Lint (ruff)
         run: ruff check .
       - name: Tip kontrolü (mypy)

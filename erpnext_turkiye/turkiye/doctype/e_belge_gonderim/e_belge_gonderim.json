@@ -1,0 +1,135 @@
+{
+  "actions": [],
+  "autoname": "format:E-BLG-{YYYY}-{#####}",
+  "creation": "2026-11-23 00:00:00.000000",
+  "doctype": "DocType",
+  "engine": "InnoDB",
+  "field_order": [
+    "fatura",
+    "belge_turu",
+    "durum",
+    "uuid",
+    "alici_vkn",
+    "column_break_uyi",
+    "deneme_sayisi",
+    "son_deneme",
+    "section_xml",
+    "xml_icerik",
+    "gonderim_cevabi",
+    "section_hata",
+    "hata_mesaji"
+  ],
+  "fields": [
+    {
+      "fieldname": "fatura",
+      "fieldtype": "Link",
+      "in_list_view": 1,
+      "label": "Satış Faturası",
+      "options": "Sales Invoice",
+      "reqd": 1
+    },
+    {
+      "default": "e-Fatura",
+      "fieldname": "belge_turu",
+      "fieldtype": "Select",
+      "in_list_view": 1,
+      "label": "Belge Türü",
+      "options": "e-Fatura\ne-Arşiv\ne-İrsaliye"
+    },
+    {
+      "default": "Uretilmis",
+      "fieldname": "durum",
+      "fieldtype": "Select",
+      "in_list_view": 1,
+      "in_standard_filter": 1,
+      "label": "Durum",
+      "options": "Uretilmis\nKuyrukta\nGonderildi\nHata\nIptal"
+    },
+    {
+      "fieldname": "uuid",
+      "fieldtype": "Data",
+      "label": "Belge UUID"
+    },
+    {
+      "fieldname": "alici_vkn",
+      "fieldtype": "Data",
+      "in_list_view": 1,
+      "label": "Alıcı VKN/TCKN"
+    },
+    {
+      "fieldname": "column_break_uyi",
+      "fieldtype": "Column Break"
+    },
+    {
+      "default": "0",
+      "fieldname": "deneme_sayisi",
+      "fieldtype": "Int",
+      "label": "Deneme Sayısı"
+    },
+    {
+      "fieldname": "son_deneme",
+      "fieldtype": "Datetime",
+      "label": "Son Deneme"
+    },
+    {
+      "fieldname": "section_xml",
+      "fieldtype": "Section Break",
+      "label": "UBL-TR XML"
+    },
+    {
+      "fieldname": "xml_icerik",
+      "fieldtype": "Long Text",
+      "label": "XML İçerik"
+    },
+    {
+      "fieldname": "gonderim_cevabi",
+      "fieldtype": "Small Text",
+      "label": "Entegratör Cevabı"
+    },
+    {
+      "fieldname": "section_hata",
+      "fieldtype": "Section Break",
+      "label": "Hata"
+    },
+    {
+      "fieldname": "hata_mesaji",
+      "fieldtype": "Small Text",
+      "label": "Hata Mesajı"
+    }
+  ],
+  "index_web_pages_for_search": 1,
+  "links": [],
+  "modified": "2026-11-23 00:00:00.000000",
+  "modified_by": "Administrator",
+  "module": "Turkiye",
+  "name": "E Belge Gonderim",
+  "naming_rule": "Expression",
+  "owner": "Administrator",
+  "permissions": [
+    {
+      "create": 1,
+      "delete": 1,
+      "email": 1,
+      "print": 1,
+      "read": 1,
+      "report": 1,
+      "role": "System Manager",
+      "share": 1,
+      "write": 1
+    },
+    {
+      "create": 1,
+      "email": 1,
+      "print": 1,
+      "read": 1,
+      "report": 1,
+      "role": "Accounts User",
+      "share": 1,
+      "write": 1
+    }
+  ],
+  "sort_field": "modified",
+  "sort_order": "DESC",
+  "states": [],
+  "title_field": "fatura"
+}

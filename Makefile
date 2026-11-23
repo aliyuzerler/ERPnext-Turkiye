@@ -5,7 +5,7 @@ PYTHON ?= python3
 .PHONY: install install-js lint typecheck unit build e2e phase-gate
 
 install: install-js
-	$(PYTHON) -m pip install --quiet ruff mypy pytest
+	$(PYTHON) -m pip install --quiet ruff mypy pytest xmlschema
 
 install-js:
 	npm install

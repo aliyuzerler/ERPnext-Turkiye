@@ -13,6 +13,7 @@ app_license = "mit"
 required_apps = ["erpnext"]
 
 # Kaynak Veri katmanı: ana veri doğrulama kuralları (Tablo 3 / Bölüm 5)
+# e-Dönüşüm: satış faturası on_submit -> UBL-TR üretimi + şema doğrulaması (KM-3)
 doc_events = {
     "Customer": {
         "validate": "erpnext_turkiye.turkiye.frappe_olaylari.validate_tax_id",
@@ -22,6 +23,10 @@ doc_events = {
     },
     "Company": {
         "validate": "erpnext_turkiye.turkiye.frappe_olaylari.validate_tax_id",
+    },
+    "Sales Invoice": {
+        "on_submit": "erpnext_turkiye.turkiye.ebelge.olaylari.fatura_gonderim_kaydet",
+        "on_cancel": "erpnext_turkiye.turkiye.ebelge.olaylari.gonderim_iptal",
     },
 }
 

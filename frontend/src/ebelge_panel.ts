@@ -1,9 +1,11 @@
 /**
- * e-Belge Durum Panosu — Faz 0 iskelet bileşeni (yeni özellik 6, Faz 3'te canlı veriye bağlanır).
+ * e-Belge Durum Panosu — Faz 0 iskelet bileşeni (Faz 3: canlı veri modu).
  *
  * Bekleyen, hatalı ve tamamlanan e-belgeleri tek ekranda gösterir; durum
  * filtreleri tabloyu anında daraltır. Tarayıcıda `window.EBelgePanel.create`
- * olarak kullanılır (tsc, modulsuz betik üretir — bkz. tsconfig.json).
+ * sabit veriyle, `window.EBelgePanel.canliOlustur` ise sitenin
+ * `ebelge_ozeti` API'sinden (Frappe whitelisted) canlı veriyle çalışır
+ * (tsc, modulsuz betik üretir — bkz. tsconfig.json).
  */
 
 type Durum = "bekleyen" | "hatali" | "tamamlanan";
@@ -20,6 +22,7 @@ interface PanelVerisi {
 
 interface EBelgePanelApi {
   create(alan: HTMLElement, veri: PanelVerisi): void;
+  canliOlustur(alan: HTMLElement): Promise<void>;
 }
 
 const DURUM_SIRASI: Durum[] = ["bekleyen", "hatali", "tamamlanan"];
@@ -119,4 +122,27 @@ function create(alan: HTMLElement, veri: PanelVerisi): void {
 }
 
 const hedef: unknown = typeof window !== "undefined" ? window : globalThis;
-(hedef as { EBelgePanel: EBelgePanelApi }).EBelgePanel = { create };
+
+async function canliVeriAl(): Promise<PanelVerisi> {
+  const yanit = await fetch("/api/method/erpnext_turkiye.turkiye.ebelge.api.ebelge_ozeti");
+  const govde = (await yanit.json()) as {
+    message: { kayitlar: { fatura: string; belge_turu: string; durum: string }[] };
+  };
+  const durum_esle: Record<string, Durum> = {
+    Gonderildi: "tamamlanan",
+    Hata: "hatali",
+  };
+  const belgeler = govde.message.kayitlar.map((kayit): Belge => ({
+    belgeNo: kayit.fatura,
+    tip: kayit.belge_turu,
+    durum: durum_esle[kayit.durum] ?? "bekleyen",
+  }));
+  return { belgeler };
+}
+
+async function canliOlustur(alan: HTMLElement): Promise<void> {
+  const veri = await canliVeriAl();
+  create(alan, veri);
+}
+
+(hedef as { EBelgePanel: EBelgePanelApi }).EBelgePanel = { create, canliOlustur };

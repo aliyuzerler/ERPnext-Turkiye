@@ -66,7 +66,7 @@ def test_yevmiye_dengesi_kurali() -> None:
         ),
     )
     with pytest.raises(ValueError, match="Dengesiz yevmiye maddesi"):
-        xbrlgl_yevmiye(KAYITLAR + [dengesiz], VKN, UNVAN, 2026)
+        xbrlgl_yevmiye([*KAYITLAR, dengesiz], VKN, UNVAN, 2026)
 
 
 def test_xbrlgl_yapisi() -> None:

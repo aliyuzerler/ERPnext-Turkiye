@@ -435,3 +435,234 @@ def km2_fatura_dogrulamasi() -> dict[str, object]:
         "kdv": fatura.total_taxes_and_charges,
         "gecersiz_vkn_reddedildi": engellendi,
     }
+
+
+def faz4_kurulum() -> dict[str, object]:
+    """Faz 4 site kurulumu: İK-bordro uyarlamaları (hrms gerekli).
+
+    Kurulanlar: Türkiye Salary Component seti (SGK/İşsizlik/Damga/Gelir
+    Vergisi), GİB 2026 gelir vergisi tarifesi (Income Tax Slab), 4857
+    izin türleri, 2429 s.K. 2026 resmî tatil listesi ve rol profilleri.
+    SAF bordro çekirdeği (bordro/) tutar ve oranları buraya taşır.
+    """
+    import frappe
+
+    if "hrms" not in frappe.get_installed_apps():
+        frappe.throw("İK uyarlamaları hrms uygulaması ister; önce bench get-app hrms")
+    ozet: dict[str, object] = {}
+    ozet["bilesenler"] = bordro_bilesenleri_kur()
+    ozet["gelir_vergisi_slabi"] = gelir_vergisi_dilimleri_kur()
+    ozet["izin_turleri"] = izin_turleri_kur()
+    ozet["tatil_listesi"] = tatil_listesi_kur()
+    ozet["rol_profilleri"] = rol_profilleri_kur()
+    ozet["crm_proje"] = crm_proje_tanimlari_kur()
+    frappe.db.commit()
+    return ozet
+
+
+def crm_proje_tanimlari_kur() -> dict[str, list[str]]:
+    """Türkiye proje türleri (v1 kapsam; CRM ayrıntısı Faz 5 UAT'e)."""
+    import frappe
+
+    turler = ["Sözleşmeli Proje", "Dahili Ar-Ge", "Bakım Hizmeti"]
+    olusan: list[str] = []
+    for ad in turler:
+        if frappe.db.exists("Project Type", ad):
+            olusan.append(ad)
+            continue
+        frappe.get_doc({"doctype": "Project Type", "project_type": ad}).insert(
+            ignore_permissions=True
+        )
+        olusan.append(ad)
+    frappe.db.commit()
+    return {"proje_turleri": olusan}
+
+
+def _bilesen_yoksa_ekle(
+    ad: str,
+    tur: str,
+    formulu: str | None = None,
+    **ekstra: object,
+) -> str:
+    """Salary Component yoksa formüllü kurar; adını döndürür."""
+    import frappe
+
+    if frappe.db.exists("Salary Component", ad):
+        return str(ad)
+    veri: dict[str, object] = {
+        "doctype": "Salary Component",
+        "salary_component": ad,
+        "type": tur,
+        "amount_based_on_formula": 1 if formulu else 0,
+        "formula": formulu,
+    }
+    veri.update(ekstra)
+    frappe.get_doc(veri).insert(ignore_permissions=True)
+    return str(ad)
+
+
+def bordro_bilesenleri_kur() -> list[str]:
+    """Türkiye Salary Component seti (2026 oranları, SAF bordro/sgk ile uyumlu).
+
+    Formüller: SGK İşçi %14, İşsizlik İşçi %1, Damga binde 7,59,
+    Gelir Vergisi tarifeden (variable), SGK İşveren %20,75 (toplama
+    dahil değil — işveren maliyet gösterimi).
+    """
+    import frappe
+
+    olusan: list[str] = []
+    olusan.append(_bilesen_yoksa_ekle("SGK İşçi Payı", "Deduction", "base * 0.14", abbr="SGK_I"))
+    olusan.append(
+        _bilesen_yoksa_ekle(
+            "İşsizlik Sigortası İşçi Payı", "Deduction", "base * 0.01", abbr="ISS_I"
+        )
+    )
+    olusan.append(_bilesen_yoksa_ekle("Damga Vergisi", "Deduction", "base * 0.00759", abbr="DV"))
+    olusan.append(
+        _bilesen_yoksa_ekle(
+            "Gelir Vergisi",
+            "Deduction",
+            None,
+            abbr="GV",
+            variable_based_on_taxable_salary=1,
+            is_income_tax_component=1,
+        )
+    )
+    olusan.append(
+        _bilesen_yoksa_ekle(
+            "SGK İşveren Payı",
+            "Deduction",
+            "base * 0.2075",
+            abbr="SGK_V",
+            do_not_include_in_total=1,
+        )
+    )
+    olusan.append(
+        _bilesen_yoksa_ekle(
+            "İşsizlik Sigortası İşveren Payı",
+            "Deduction",
+            "base * 0.02",
+            abbr="ISS_V",
+            do_not_include_in_total=1,
+        )
+    )
+    frappe.db.commit()
+    return olusan
+
+
+def gelir_vergisi_dilimleri_kur() -> str:
+    """GİB 2026 ücret tarifesi → Income Tax Slab "Türkiye 2026 (Ücret)"."""
+    import frappe
+
+    from erpnext_turkiye.turkiye.bordro.vergi import GELIR_VERGISI_TARIFESI_2026_UCRET
+
+    ad = "Türkiye 2026 (Ücret)"
+    if frappe.db.exists("Income Tax Slab", ad):
+        return ad
+    dilimler: list[dict[str, object]] = []
+    alt_sinir = 0.0
+    for ust, oran in GELIR_VERGISI_TARIFESI_2026_UCRET:
+        dilimler.append(
+            {
+                "from_amount": alt_sinir,
+                "to_amount": ust if ust != float("inf") else 0.0,
+                "percent_deduction": oran * 100,
+            }
+        )
+        alt_sinir = ust
+    frappe.get_doc(
+        {
+            "doctype": "Income Tax Slab",
+            "name": ad,
+            "enabled": 1,
+            "salary_slab_based_on": "Yearly",
+            "currency": "TRY",
+            "slabs": dilimler,
+        }
+    ).insert(ignore_permissions=True)
+    frappe.db.commit()
+    return ad
+
+
+def izin_turleri_kur() -> list[str]:
+    """4857 s.K. uyarınca standart izin türleri (hrms Leave Type)."""
+    import frappe
+
+    turler: list[dict[str, object]] = [
+        {
+            "leave_type_name": "Yıllık Ücretli İzin",
+            "is_carry_forward": 1,
+            "max_leaves_allowed": 26,
+        },
+        {"leave_type_name": "Mazeret İzni"},
+        {"leave_type_name": "Hastalık İzni"},
+        {"leave_type_name": "Ücretsiz İzin", "is_lwp": 1},
+        {"leave_type_name": "Doğum İzni", "max_leaves_allowed": 112},  # 4857 m.74: 8+8 hafta
+        {"leave_type_name": "Babalık İzni", "max_leaves_allowed": 5},  # m.74/6: 5 gün
+    ]
+    olusan: list[str] = []
+    for tur in turler:
+        ad = str(tur["leave_type_name"])
+        if frappe.db.exists("Leave Type", ad):
+            olusan.append(ad)
+            continue
+        frappe.get_doc({"doctype": "Leave Type", **tur}).insert(ignore_permissions=True)
+        olusan.append(ad)
+    frappe.db.commit()
+    return olusan
+
+
+def tatil_listesi_kur() -> str:
+    """2429 s.K. 2026 resmî tatilleri → Holiday List "Türkiye 2026"."""
+    import frappe
+
+    from erpnext_turkiye.turkiye.bordro.izin import RESMI_TATILLER_2026
+
+    ad = "Türkiye 2026"
+    if frappe.db.exists("Holiday List", ad):
+        return ad
+    gunler = [
+        {
+            "holiday_date": t.tarih,
+            "description": t.ad + (" (yarım gün)" if t.yarim_gun else ""),
+            "weekly_off": 0,
+        }
+        for t in RESMI_TATILLER_2026
+    ]
+    frappe.get_doc(
+        {
+            "doctype": "Holiday List",
+            "holiday_list_name": ad,
+            "from_date": "2026-01-01",
+            "to_date": "2026-12-31",
+            "holidays": gunler,
+        }
+    ).insert(ignore_permissions=True)
+    frappe.db.commit()
+    return ad
+
+
+def rol_profilleri_kur() -> list[str]:
+    """Türkiye rol profilleri: bordro yöneticisi, muhasebe, satış."""
+    import frappe
+
+    profiller: dict[str, tuple[str, ...]] = {
+        "Türkiye Bordro Yöneticisi": ("HR User", "HR Manager"),
+        "Türkiye Muhasebe": ("Accounts User", "Accounts Manager"),
+        "Türkiye Satış": ("Sales User", "Sales Manager"),
+    }
+    olusan: list[str] = []
+    for ad, roller in profiller.items():
+        if frappe.db.exists("Role Profile", ad):
+            olusan.append(ad)
+            continue
+        frappe.get_doc(
+            {
+                "doctype": "Role Profile",
+                "role_profile": ad,
+                "roles": [{"role": r} for r in roller],
+            }
+        ).insert(ignore_permissions=True)
+        olusan.append(ad)
+    frappe.db.commit()
+    return olusan

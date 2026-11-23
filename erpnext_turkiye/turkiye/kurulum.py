@@ -672,11 +672,12 @@ def rol_profilleri_kur() -> list[str]:
 def faz5_kurulum() -> dict[str, object]:
     """Faz 5 site kurulumu: bordro yapısı + çalışan + örnek bordro.
 
-    Kurulanlar: Temel Ücret bileşeni, "Türkiye Standart" Salary Structure
-    (Faz 4 bileşen setiyle: SGK %14, İşsizlik %1, Damga binde 7,59, GV
-    tarifeden), örnek çalışan, Salary Structure Assignment (brüt 60.000)
-    ve Kasım 2026 Salary Slip'i — SAF bordro_hesapla ile çapraz
-    doğrulama yapar (UAT-İK senaryosunun temeli).
+    Kurulanlar: Temel Ücret bileşeni, slab muafiyet bayrağı (hrms GV
+    matrahından SGK mahsubu için), 2026 Payroll Period (hrms değişken
+    vergi hesabı dönem ister), "Türkiye Standart" Salary Structure,
+    örnek çalışan, Salary Structure Assignment (brüt 60.000) ve Kasım
+    2026 Salary Slip'i — SAF bordro_hesapla ile çapraz doğrulama yapar
+    (UAT-İK senaryosunun temeli).
     """
     import frappe
 
@@ -684,12 +685,55 @@ def faz5_kurulum() -> dict[str, object]:
         frappe.throw("Bordro yapısı hrms uygulaması ister")
     ozet: dict[str, object] = {}
     ozet["bilesen"] = _temel_ucret_bileseni()
+    ozet["slab_muafiyet"] = slab_muafiyet_ac()
+    ozet["donem"] = bordro_donemi_kur()
     ozet["yapı"] = bordro_yapisi_kur()
     ozet["calisan"] = ornek_calisan_kur()
     ozet["atama"] = bordro_atama_kur(60000.0)
     ozet["bordro"] = ornek_bordro_kes("2026-11")
     frappe.db.commit()
     return ozet
+
+
+def slab_muafiyet_ac() -> str:
+    """GV matrahından SGK mahsubu: Income Tax Slab.allow_tax_exemption=1.
+
+    hrms kaynağı (salary_slip.py): ``get_taxable_earnings(
+    self.tax_slab.allow_tax_exemption)`` — bayrak kapalıyken
+    ``exempted_from_income_tax`` işaretli kesintiler yok sayılır ve GV
+    brüt üzerinden çıkar (GVK m.63'e aykırı). Bayrağı açarız.
+    """
+    import frappe
+
+    slab = "Türkiye 2026 (Ücret)"
+    if not frappe.db.exists("Income Tax Slab", slab):
+        frappe.throw(f"Gelir vergisi dilimi yok: {slab}; önce gelir_vergisi_dilimleri_kur")
+    if not frappe.db.get_value("Income Tax Slab", slab, "allow_tax_exemption"):
+        frappe.db.set_value("Income Tax Slab", slab, "allow_tax_exemption", 1)
+    frappe.db.commit()
+    return slab
+
+
+def bordro_donemi_kur() -> str:
+    """Payroll Period 2026 — hrms değişken vergi hesabı dönem ister."""
+    import frappe
+
+    ad = "2026 Takvim Yılı"
+    if frappe.db.exists("Payroll Period", ad):
+        return ad
+    sirket = frappe.db.get_value("Company", {}, "name")
+    frappe.get_doc(
+        {
+            "doctype": "Payroll Period",
+            "name": ad,
+            "payroll_period_name": ad,
+            "company": sirket,
+            "start_date": "2026-01-01",
+            "end_date": "2026-12-31",
+        }
+    ).insert(ignore_permissions=True)
+    frappe.db.commit()
+    return ad
 
 
 def _temel_ucret_bileseni() -> str:
@@ -713,24 +757,57 @@ def _temel_ucret_bileseni() -> str:
 
 
 def bordro_yapisi_kur() -> str:
-    """'Türkiye Standart' Salary Structure (Faz 4 bileşen setiyle)."""
+    """'Türkiye Standart' Salary Structure (formüllü + muafiyet işaretli)."""
     import frappe
 
     ad = "Türkiye Standart"
     if frappe.db.exists("Salary Structure", ad):
-        return ad
+        belge = frappe.get_doc("Salary Structure", ad)
+        sgk = next((d for d in belge.deductions if d.salary_component == "SGK İşçi Payı"), None)
+        gv = next((d for d in belge.deductions if d.salary_component == "Gelir Vergisi"), None)
+        guncel = (
+            gv is not None
+            and gv.variable_based_on_taxable_salary
+            and sgk is not None
+            and sgk.exempted_from_income_tax
+        )
+        if not guncel:
+            # eski şema: önce atama, sonra yapıyı iptal edip yeniden kur
+            for a in frappe.get_all(
+                "Salary Structure Assignment",
+                filters={"salary_structure": ad},
+                pluck="name",
+            ):
+                d = frappe.get_doc("Salary Structure Assignment", a)
+                if d.docstatus == 1:
+                    d.cancel()
+                frappe.delete_doc("Salary Structure Assignment", a, force=True)
+            belge.cancel()
+            frappe.delete_doc("Salary Structure", ad, force=True)
+        else:
+            if belge.docstatus == 0:
+                belge.submit()  # hrms yalnızca onaylı yapıyı kullanır
+            frappe.db.commit()
+            return ad
     sirket = frappe.db.get_value("Company", {}, "name")
     if not sirket:
         frappe.throw("Şirket yok; önce sirket_olustur çalıştırın")
-    kesintiler = ["SGK İşçi Payı", "İşsizlik Sigortası İşçi Payı", "Damga Vergisi", "Gelir Vergisi"]
-    frappe.get_doc(
+    kesintiler: dict[str, tuple[str | None, bool]] = {
+        # (formül, GV matrahından mahsuben) — GVK m.63: SGK primleri matrahtan düşülür
+        "SGK İşçi Payı": ("base * 0.14", True),
+        "İşsizlik Sigortası İşçi Payı": ("base * 0.01", True),
+        "Damga Vergisi": ("base * 0.00759", False),
+        "Gelir Vergisi": (None, False),  # tarifeden: variable_based_on_taxable_salary
+    }
+    yapi = frappe.get_doc(
         {
             "doctype": "Salary Structure",
+            "name": ad,  # hrms autoname=prompt: ad açık verilmeli
             "salary_structure": ad,
             "company": sirket,
             "currency": "TRY",
             "payroll_frequency": "Monthly",
-            "is_active": 1,
+            "is_active": "Yes",  # Select alanı: Yes/No
             "earnings": [
                 {
                     "salary_component": "Temel Ücret",
@@ -740,10 +817,19 @@ def bordro_yapisi_kur() -> str:
                 }
             ],
             "deductions": [
-                {"salary_component": k, "amount_based_on_formula": 1} for k in kesintiler
+                {
+                    "salary_component": k,
+                    "amount_based_on_formula": 1 if f else 0,
+                    "formula": f,
+                    "variable_based_on_taxable_salary": 1 if f is None else 0,
+                    "exempted_from_income_tax": 1 if muaf else 0,
+                }
+                for k, (f, muaf) in kesintiler.items()
             ],
         }
-    ).insert(ignore_permissions=True)
+    )
+    yapi.insert(ignore_permissions=True)
+    yapi.submit()
     frappe.db.commit()
     return ad
 
@@ -753,7 +839,17 @@ def ornek_calisan_kur() -> str:
     import frappe
 
     if frappe.db.exists("Employee", {"employee_name": "Aydın Kaya"}):
-        return str(frappe.db.get_value("Employee", {"employee_name": "Aydın Kaya"}, "name"))
+        calisan = str(frappe.db.get_value("Employee", {"employee_name": "Aydın Kaya"}, "name"))
+        if not frappe.db.get_value("Employee", calisan, "holiday_list"):
+            frappe.db.set_value("Employee", calisan, "holiday_list", "Türkiye 2026")
+            frappe.db.commit()
+        return calisan
+    if not frappe.db.exists("Gender", "Male"):
+        frappe.get_doc({"doctype": "Gender", "gender": "Male"}).insert(ignore_permissions=True)
+    if not frappe.db.exists("Designation", "Muhasebe Uzmanı"):
+        frappe.get_doc(
+            {"doctype": "Designation", "designation_name": "Muhasebe Uzmanı"}
+        ).insert(ignore_permissions=True)
     sirket = frappe.db.get_value("Company", {}, "name")
     calisan = frappe.get_doc(
         {
@@ -766,6 +862,7 @@ def ornek_calisan_kur() -> str:
             "date_of_birth": "1990-05-17",
             "date_of_joining": "2026-01-05",
             "designation": "Muhasebe Uzmanı",
+            "holiday_list": "Türkiye 2026",
             "status": "Active",
         }
     )
@@ -787,6 +884,9 @@ def bordro_atama_kur(brut: float) -> str:
     )
     if varolan:
         frappe.db.set_value("Salary Structure Assignment", varolan, "base", brut)
+        belge = frappe.get_doc("Salary Structure Assignment", varolan)
+        if belge.docstatus == 0:
+            belge.submit()  # bordro yalnızca onaylı atamayı görür
         frappe.db.commit()
         return str(varolan)
     atama = frappe.get_doc(
@@ -797,10 +897,12 @@ def bordro_atama_kur(brut: float) -> str:
             "company": sirket,
             "from_date": "2026-11-01",
             "currency": "TRY",
+            "income_tax_slab": "Türkiye 2026 (Ücret)",
             "base": brut,
         }
     )
     atama.insert(ignore_permissions=True)
+    atama.submit()
     frappe.db.commit()
     return str(atama.name)
 

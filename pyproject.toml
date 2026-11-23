@@ -13,6 +13,10 @@ authors = [{ name = "aliyuzerler" }]
 # çekirdek modüllerin (erpnext_turkiye.turkiye.*) hiçbir üçüncü taraf bağımlılığı yoktur.
 dependencies = []
 
+[tool.setuptools]
+# flat-layout kökünde tests/, scripts/ var — setuptools'a yalnızca uygulama paketini söyle
+packages = ["erpnext_turkiye", "erpnext_turkiye.config", "erpnext_turkiye.turkiye"]
+
 [project.optional-dependencies]
 dev = ["ruff>=0.8", "mypy>=1.14", "pytest>=8.3"]
 

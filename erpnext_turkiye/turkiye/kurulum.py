@@ -323,16 +323,31 @@ def km3_fatura_gonder() -> dict[str, object]:
         ).insert(ignore_permissions=True)
         frappe.db.commit()
 
-    fatura_adi = frappe.get_all(
-        "Sales Invoice",
-        filters={"docstatus": 0},
-        order_by="creation desc",
-        limit_page_length=1,
-        pluck="name",
+    # bağımsız ve tekrar koşulabilir: km3 kendi %20 KDV'li faturasını keser;
+    # başka koşumların bıraktığı taslaklara (kirli kuyruk) bağımlı değildir
+    from erpnext.controllers.accounts_controller import get_taxes_and_charges
+
+    musteri = frappe.db.get_value("Customer", {"customer_name": "Anadolu Ticaret Ltd. Şti."})
+    if not musteri:
+        frappe.throw("Demo müşterisi yok; kurulum.demo_verisi_olustur çalıştırın")
+    satis_sablon = frappe.db.get_value(
+        "Sales Taxes and Charges Template", {"title": "KDV %20 Satış", "company": sirket}
     )
-    if not fatura_adi:
-        frappe.throw("Taslak fatura yok; kurulum.km2_fatura_dogrulamasi çalıştırın")
-    doc = frappe.get_doc("Sales Invoice", fatura_adi[0])
+    if not satis_sablon:
+        frappe.throw("KDV %20 Satış şablonu yok; kurulum.faz2_kurulum çalıştırın")
+    doc = frappe.get_doc(
+        {
+            "doctype": "Sales Invoice",
+            "company": sirket,
+            "customer": musteri,
+            "currency": "TRY",
+            "selling_price_list": "Standard Selling",
+            "taxes_and_charges": satis_sablon,
+            "taxes": get_taxes_and_charges("Sales Taxes and Charges Template", satis_sablon),
+            "items": [{"item_code": "HIZ-MLZ-001", "qty": 1, "rate": 10000.0}],
+        }
+    )
+    doc.insert(ignore_permissions=True)
     doc.submit()
     frappe.db.commit()
     kayit = frappe.db.get_value(
@@ -761,17 +776,11 @@ def bordro_yapisi_kur() -> str:
     import frappe
 
     ad = "Türkiye Standart"
+    muaf_bilesenler = ["SGK İşçi Payı", "İşsizlik Sigortası İşçi Payı"]
     if frappe.db.exists("Salary Structure", ad):
         belge = frappe.get_doc("Salary Structure", ad)
-        sgk = next((d for d in belge.deductions if d.salary_component == "SGK İşçi Payı"), None)
         gv = next((d for d in belge.deductions if d.salary_component == "Gelir Vergisi"), None)
-        guncel = (
-            gv is not None
-            and gv.variable_based_on_taxable_salary
-            and sgk is not None
-            and sgk.exempted_from_income_tax
-        )
-        if not guncel:
+        if gv is None or not gv.variable_based_on_taxable_salary:
             # eski şema: önce atama, sonra yapıyı iptal edip yeniden kur
             for a in frappe.get_all(
                 "Salary Structure Assignment",
@@ -787,17 +796,17 @@ def bordro_yapisi_kur() -> str:
         else:
             if belge.docstatus == 0:
                 belge.submit()  # hrms yalnızca onaylı yapıyı kullanır
+            _muafiyet_bayraklari_guncelle("Salary Structure", ad, muaf_bilesenler)
             frappe.db.commit()
             return ad
     sirket = frappe.db.get_value("Company", {}, "name")
     if not sirket:
         frappe.throw("Şirket yok; önce sirket_olustur çalıştırın")
-    kesintiler: dict[str, tuple[str | None, bool]] = {
-        # (formül, GV matrahından mahsuben) — GVK m.63: SGK primleri matrahtan düşülür
-        "SGK İşçi Payı": ("base * 0.14", True),
-        "İşsizlik Sigortası İşçi Payı": ("base * 0.01", True),
-        "Damga Vergisi": ("base * 0.00759", False),
-        "Gelir Vergisi": (None, False),  # tarifeden: variable_based_on_taxable_salary
+    kesintiler: dict[str, str | None] = {
+        "SGK İşçi Payı": "base * 0.14",
+        "İşsizlik Sigortası İşçi Payı": "base * 0.01",
+        "Damga Vergisi": "base * 0.00759",
+        "Gelir Vergisi": None,  # tarifeden: variable_based_on_taxable_salary
     }
     yapi = frappe.get_doc(
         {
@@ -822,16 +831,34 @@ def bordro_yapisi_kur() -> str:
                     "amount_based_on_formula": 1 if f else 0,
                     "formula": f,
                     "variable_based_on_taxable_salary": 1 if f is None else 0,
-                    "exempted_from_income_tax": 1 if muaf else 0,
                 }
-                for k, (f, muaf) in kesintiler.items()
+                for k, f in kesintiler.items()
             ],
         }
     )
     yapi.insert(ignore_permissions=True)
     yapi.submit()
+    _muafiyet_bayraklari_guncelle("Salary Structure", ad, muaf_bilesenler)
     frappe.db.commit()
     return ad
+
+
+def _muafiyet_bayraklari_guncelle(parent_turu: str, parent_adi: str, bilesenler: list[str]) -> None:
+    """Salary Detail muafiyet bayraklarını kayıttan sonra doğrudan yazar.
+
+    frappe ``set_new_name`` basamağı child Check alanlarını sıfırlıyor
+    (yapı ve bordro insert'ünde fiilen doğrulandı); hrms
+    ``get_taxable_earnings`` GVK m.63 mahsubu için bu kolona
+    (``exempted_from_income_tax``) baktığından bayraklar DB'de tutulmalıdır.
+    Bordro tarafında yama sonrası reload+save ile yeniden hesap gerekir.
+    """
+    import frappe
+
+    frappe.db.sql(
+        "UPDATE `tabSalary Detail` SET exempted_from_income_tax=1 "
+        "WHERE parenttype=%s AND parent=%s AND salary_component IN %s",
+        (parent_turu, parent_adi, tuple(bilesenler)),
+    )
 
 
 def ornek_calisan_kur() -> str:
@@ -941,7 +968,18 @@ def ornek_bordro_kes(donem: str) -> dict[str, object]:
         }
     )
     slip.insert(ignore_permissions=True)
-    slip.calculate_net_pay()
+    # set_new_name basamağı child Check alanlarını sıfırladığı için DB'den yamala;
+    # save() erken basamağı da sıfırladığı için doğrudan validate + ham db_update
+    # kullanılır (izleme notu: hrms validate zinciri bayrakları korur).
+    _muafiyet_bayraklari_guncelle(
+        "Salary Slip", slip.name, ["SGK İşçi Payı", "İşsizlik Sigortası İşçi Payı"]
+    )
+    slip = frappe.get_doc("Salary Slip", slip.name)
+    slip.validate()  # GV mahsubuyla yeniden hesap (GVK m.63)
+    slip.db_update()  # net/toplam alanları ham yazım
+    for d in slip.get_all_children():
+        d.db_update()  # satır tutarları + muafiyet bayrakları ham yazım
+    slip.db_set("net_pay", slip.net_pay)
     net_site = float(slip.net_pay or 0)
     brut = float(
         frappe.db.get_value("Salary Structure Assignment", {"employee": calisan}, "base") or 0

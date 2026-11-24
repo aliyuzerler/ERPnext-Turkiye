@@ -7,13 +7,13 @@ ERPNext hizmet yaklaşımı temel alınarak hazırlanmıştır (bkz. ROADMAP.md)
 
 ## Proje durumu — Faz 5 tamamlandı (UAT 15/15 PASS)
 
-| Faz   | Kapsam                                                      | Durum                  |
-| ----- | ----------------------------------------------------------- | ---------------------- |
-| Faz 0 | Keşif, iskelet, kalite kapıları                             | ✅ Tamamlandı          |
-| Faz 1 | Kurulum ve temel yapılandırma (Türkçe arayüz)               | ✅ Tamamlandı          |
-| Faz 2 | Türkiye lokalizasyon paketi (THP, KDV, TCKN/VKN, TCMB)      | ✅ Tamamlandı          |
-| Faz 3 | e-Dönüşüm entegrasyonu (UBL-TR, iletim, panosu)             | ✅ Çekirdek tamamlandı |
-| Faz 4 | İK-Bordro ve kalan modüller (SAF bordro + hrms seti)        | ✅ Çekirdek tamamlandı |
+| Faz   | Kapsam                                                       | Durum                                     |
+| ----- | ------------------------------------------------------------ | ----------------------------------------- |
+| Faz 0 | Keşif, iskelet, kalite kapıları                              | ✅ Tamamlandı                             |
+| Faz 1 | Kurulum ve temel yapılandırma (Türkçe arayüz)                | ✅ Tamamlandı                             |
+| Faz 2 | Türkiye lokalizasyon paketi (THP, KDV, TCKN/VKN, TCMB)       | ✅ Tamamlandı                             |
+| Faz 3 | e-Dönüşüm entegrasyonu (UBL-TR, iletim, panosu)              | ✅ Çekirdek tamamlandı                    |
+| Faz 4 | İK-Bordro ve kalan modüller (SAF bordro + hrms seti)         | ✅ Çekirdek tamamlandı                    |
 | Faz 5 | UAT, eğitim ve kontrollü canlıya alma (e-Defter BG/YB, KM-4) | ✅ Tamamlandı (GİB yükleme pilot kurumda) |
 
 Faz 1 çıktıları ve Türkçe arayüz ekran görüntüleri: [docs/FAZ1.md](docs/FAZ1.md)

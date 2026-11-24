@@ -27,11 +27,11 @@ Müşteri kartında VKN otomatik doğrulanır; geçersiz VKN ile kayıt açılam
 e-belge üretimi engellenir (Faz 2 kuralı, km2 kanıtı). Bölge alanı Türkiye'nin
 81 ili ve 1054 bölge kaydıyla doludur.
 
-| Set | Oran | Kullanım |
-| --- | --- | --- |
-| KDV %1 Satış / Alış / Kalem | %1 | Temel gıda, kitap vb. |
-| KDV %10 Satış / Alış / Kalem | %10 | Belirli tarım ve hizmet kalemleri |
-| KDV %20 Satış / Alış / Kalem | %20 | Genel oran — varsayılan satış şablonu |
+| Set                          | Oran | Kullanım                              |
+| ---------------------------- | ---- | ------------------------------------- |
+| KDV %1 Satış / Alış / Kalem  | %1   | Temel gıda, kitap vb.                 |
+| KDV %10 Satış / Alış / Kalem | %10  | Belirli tarım ve hizmet kalemleri     |
+| KDV %20 Satış / Alış / Kalem | %20  | Genel oran — varsayılan satış şablonu |
 
 Fatura adımları: Satış → Satış Faturası → Yeni; müşteri seç; kalem ekle
 (demo: HIZ-MLZ-001, HIZ-DAN-001); vergi şablonu seç; Kaydet → Gönder.
@@ -54,12 +54,12 @@ vergisi matrahından SGK primleri mahsuben düşer (GVK m.63; hrms
 `allow_tax_exemption` bayrağı faz5_kurulum ile açılır). 2026 asgari ücret
 tablosu:
 
-| Kalem | Oran | Tutar (TL/ay) |
-| --- | --- | --- |
-| Brüt asgari ücret | — | 33.030,00 |
-| SGK işçi payı | %14 | 4.624,20 |
-| İşsizlik sigortası işçi payı | %1 | 330,30 |
-| Net asgari ücret (GV+DV muaf) | — | 28.075,50 |
+| Kalem                         | Oran | Tutar (TL/ay) |
+| ----------------------------- | ---- | ------------- |
+| Brüt asgari ücret             | —    | 33.030,00     |
+| SGK işçi payı                 | %14  | 4.624,20      |
+| İşsizlik sigortası işçi payı  | %1   | 330,30        |
+| Net asgari ücret (GV+DV muaf) | —    | 28.075,50     |
 
 Bordro: İK → Maaş Yapısı Ataması (çalışan + brüt), sonra İK → Maaş Bordrosu
 (dönem seç → oluştur). Brüt 60.000 TL için hrms bordrosu SAF hesabıyla kuruş
@@ -78,11 +78,11 @@ tatil listesi 2429 sayılı Kanun'a göre **15,5 gün**: bayram arifeleri ve
 
 ## 7. Roller ve Yetkiler
 
-| Profil | Roller | Kapsam |
-| --- | --- | --- |
-| Türkiye Bordro Yöneticisi | HR User, HR Manager | Özlük, izin, bordro |
-| Türkiye Muhasebe | Accounts User, Accounts Manager | Fatura, KDV, THP, e-belge |
-| Türkiye Satış | Sales User, Sales Manager | Müşteri, teklif, sipariş, fatura |
+| Profil                    | Roller                          | Kapsam                           |
+| ------------------------- | ------------------------------- | -------------------------------- |
+| Türkiye Bordro Yöneticisi | HR User, HR Manager             | Özlük, izin, bordro              |
+| Türkiye Muhasebe          | Accounts User, Accounts Manager | Fatura, KDV, THP, e-belge        |
+| Türkiye Satış             | Sales User, Sales Manager       | Müşteri, teklif, sipariş, fatura |
 
 Profil değişikliği oturum yeniden açıldığında devreye girer; doküman düzeyi
 kıst için Kullanıcı İzinleri bölümünü kullanın.
@@ -98,13 +98,13 @@ Zaman damgası ve GİB yükleme gerçek ortam işlevidir (entegratör).
 
 ## 9. Sorun Giderme
 
-| Durum | Çözüm |
-| --- | --- |
-| turkiye.local çözümlenmiyor | hosts kaydı + `bench start` kontrolü |
-| Fatura gönderildi, e-belge yok | E Belge Gonderim listesine bak; fatura üzerinde Yenile |
-| Bordro neti farklı | Kümülatif matrah: önceki aylar kesilmiş mi |
-| Geçersiz VKN ile kayıt açılamıyor | Hata değil — Faz 2 doğrulama kuralı |
-| KDV şablonu gelmiyor | Müşteri kartındaki vergi şablonunu kontrol et |
+| Durum                             | Çözüm                                                  |
+| --------------------------------- | ------------------------------------------------------ |
+| turkiye.local çözümlenmiyor       | hosts kaydı + `bench start` kontrolü                   |
+| Fatura gönderildi, e-belge yok    | E Belge Gonderim listesine bak; fatura üzerinde Yenile |
+| Bordro neti farklı                | Kümülatif matrah: önceki aylar kesilmiş mi             |
+| Geçersiz VKN ile kayıt açılamıyor | Hata değil — Faz 2 doğrulama kuralı                    |
+| KDV şablonu gelmiyor              | Müşteri kartındaki vergi şablonunu kontrol et          |
 
 Yedek: `bench --site turkiye.local backup`; çıktı
 `sites/turkiye.local/private/backups`. Canlıya alma planı için

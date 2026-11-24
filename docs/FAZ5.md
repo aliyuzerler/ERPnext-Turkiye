@@ -1,7 +1,6 @@
 # Faz 5 — UAT, Eğitim ve Canlıya Alma Hazırlığı
 
-**Durum: tamamlandı.** KM-4 çıkış kanıtı: 15/15 senaryo PASS (bu belgenin
-3. bölümü). Bu belge; e-Defter BG/YB kapsam sınırlarını, UAT raporunu,
+**Durum: tamamlandı.** KM-4 çıkış kanıtı: 15/15 senaryo PASS (bu belgenin 3. bölümü). Bu belge; e-Defter BG/YB kapsam sınırlarını, UAT raporunu,
 performans duman testini, geri alma planını ve kontrollü canlıya alma
 kontrol listesini içerir.
 
@@ -26,13 +25,13 @@ Modül: `erpnext_turkiye/turkiye/edefter/` (SAF Python, sitesiz çalışır).
 
 Kılavuz kuralları sınanır (tests/test_edefter.py):
 
-| Kural | Uygulama |
-| --- | --- |
-| Her yevmiye maddesi borç = alacak | `YevmiyeKayit.dengeli_mi`; dengesiz madde `ValueError` |
-| Yevmiye ve kebir için ayrı berat | `yevmiye_berat()` + `kebir_berat()` |
-| ZIP paketi iki dosya içerir (defter + berat) | `paketle()`; iki-dosya doğrulaması `paket_dogrula()` |
-| Berat defter içeriğini taşımaz | Berat yalnızca dönem özeti + defter SHA-256 |
-| Arşiv düzeni | `{dizin}/{yıl}/{defter_turu}/paket.zip` + `manifest.json` (SHA-256) |
+| Kural                                        | Uygulama                                                            |
+| -------------------------------------------- | ------------------------------------------------------------------- |
+| Her yevmiye maddesi borç = alacak            | `YevmiyeKayit.dengeli_mi`; dengesiz madde `ValueError`              |
+| Yevmiye ve kebir için ayrı berat             | `yevmiye_berat()` + `kebir_berat()`                                 |
+| ZIP paketi iki dosya içerir (defter + berat) | `paketle()`; iki-dosya doğrulaması `paket_dogrula()`                |
+| Berat defter içeriğini taşımaz               | Berat yalnızca dönem özeti + defter SHA-256                         |
+| Arşiv düzeni                                 | `{dizin}/{yıl}/{defter_turu}/paket.zip` + `manifest.json` (SHA-256) |
 
 Site kanıtı: GL fişlerinden üretilen yevmiye paketi
 `sites/turkiye.local/private/files/edefter/2026/yevmiye/` altında
@@ -43,23 +42,23 @@ arşivlendi (UAT-ED1..3 PASS; örnek kopya `download/FAZ5/edefter-ornesi/`).
 Koşum: `stack/frappe-bench/env/bin/python scripts/faz5_uat.py turkiye.local`
 (kanıt: `download/FAZ5/uat-raporu.txt`)
 
-| Senaryo | Süreç | Kural | Sonuç |
-| --- | --- | --- | --- |
-| UAT-MH1 | Muhasebe | Satış faturasında KDV %20 (2.000,00) | PASS |
-| UAT-MH2 | Muhasebe | Mizan dengesi: borç = alacak | PASS |
-| UAT-MH3 | Muhasebe | e-Belge kaydı üretildi (UBL-TR; E-BLG-2026-00002) | PASS |
-| UAT-MH4 | Muhasebe | Geçersiz VKN faturası/müşterisi reddedildi | PASS |
-| UAT-ST1 | Satış | Sipariş toplamı 30.000,00 | PASS |
-| UAT-ST2 | Satış | Siparişte KDV %20 (6.000,00) | PASS |
-| UAT-ST3 | Satış | Müşteri kaydı ve Türkiye bölgesi | PASS |
-| UAT-ST4 | Satış | Müşteri bölgesi Türkiye (81 il / 1054 bölge verisi) | PASS |
-| UAT-IK1 | İK | Bordro bileşen seti (SGK/İşsizlik/Damga/GV) kuruldu | PASS |
-| UAT-IK2 | İK | hrms bordro neti = SAF hesap (≤ 0,10 TL) | PASS |
-| UAT-IK3 | İK | hrms net 42.894,52 (GİB değeri 42.894,60) | PASS |
-| UAT-ED1 | e-Defter | Yevmiye maddeleri dengeli (4/4 fiş) | PASS |
-| UAT-ED2 | e-Defter | ZIP iki dosya (defter + berat) | PASS |
-| UAT-ED3 | e-Defter | Arşiv manifesti SHA-256 tutarlı | PASS |
-| UAT-PR1 | Performans | 100 fatura, 3,8 sn (38 ms/fatura) | PASS |
+| Senaryo | Süreç      | Kural                                               | Sonuç |
+| ------- | ---------- | --------------------------------------------------- | ----- |
+| UAT-MH1 | Muhasebe   | Satış faturasında KDV %20 (2.000,00)                | PASS  |
+| UAT-MH2 | Muhasebe   | Mizan dengesi: borç = alacak                        | PASS  |
+| UAT-MH3 | Muhasebe   | e-Belge kaydı üretildi (UBL-TR; E-BLG-2026-00002)   | PASS  |
+| UAT-MH4 | Muhasebe   | Geçersiz VKN faturası/müşterisi reddedildi          | PASS  |
+| UAT-ST1 | Satış      | Sipariş toplamı 30.000,00                           | PASS  |
+| UAT-ST2 | Satış      | Siparişte KDV %20 (6.000,00)                        | PASS  |
+| UAT-ST3 | Satış      | Müşteri kaydı ve Türkiye bölgesi                    | PASS  |
+| UAT-ST4 | Satış      | Müşteri bölgesi Türkiye (81 il / 1054 bölge verisi) | PASS  |
+| UAT-IK1 | İK         | Bordro bileşen seti (SGK/İşsizlik/Damga/GV) kuruldu | PASS  |
+| UAT-IK2 | İK         | hrms bordro neti = SAF hesap (≤ 0,10 TL)            | PASS  |
+| UAT-IK3 | İK         | hrms net 42.894,52 (GİB değeri 42.894,60)           | PASS  |
+| UAT-ED1 | e-Defter   | Yevmiye maddeleri dengeli (4/4 fiş)                 | PASS  |
+| UAT-ED2 | e-Defter   | ZIP iki dosya (defter + berat)                      | PASS  |
+| UAT-ED3 | e-Defter   | Arşiv manifesti SHA-256 tutarlı                     | PASS  |
+| UAT-PR1 | Performans | 100 fatura, 3,8 sn (38 ms/fatura)                   | PASS  |
 
 ### UAT-IK2/IK3 bilinen fark (kuruş düzeyi, belgelenmiş)
 
@@ -87,12 +86,12 @@ paketleme milisaniye mertebesindedir (SAF testleri < 0,1 sn).
 
 ## 5. KM-4 UAT onay formu (pilot kurum)
 
-| Rol | Ad Soyad | Tarih | İmza |
-| --- | --- | --- | --- |
-| Muhasebe süreç sahibi | ________________ | ____/____/____ | ________ |
-| Satış süreç sahibi | ________________ | ____/____/____ | ________ |
-| İK süreç sahibi | ________________ | ____/____/____ | ________ |
-| Proje yöneticisi | ________________ | ____/____/____ | ________ |
+| Rol                   | Ad Soyad         | Tarih          | İmza     |
+| --------------------- | ---------------- | -------------- | -------- |
+| Muhasebe süreç sahibi | ________________ | ****/****/____ | ________ |
+| Satış süreç sahibi    | ________________ | ****/****/____ | ________ |
+| İK süreç sahibi       | ________________ | ****/****/____ | ________ |
+| Proje yöneticisi      | ________________ | ****/****/____ | ________ |
 
 Not: Bu formun imzalanması KM-4'ü resmen kapatır; script kanıtı (15/15
 PASS) formun ekinidir.
